@@ -18,4 +18,5 @@ if __name__ == '__main__':
         extracted = db_extractor.read_rds_table(conn, 'legacy_users')
         extracted.info()
 
+    # Milestone 2 Step 6
     df = cleaner.clean_user_data(df=extracted)

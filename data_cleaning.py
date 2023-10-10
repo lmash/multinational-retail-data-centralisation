@@ -8,22 +8,23 @@ class DataCleaning:
         """
         This function cleans the user data. It removes nulls and associated bad data,
         """
-        # Set the index to be 'index'
         df = df.set_index('index')
 
-        # Issue 1 NULLS have come through instead of na - convert to na and then delete as all respective
-        # data is missing
+        # NULLS have come through instead of nan - convert to nan and then delete as missing data
         df.loc[df['last_name'] == 'NULL', 'last_name'] = np.nan
         df = df.dropna(subset=['last_name'])
 
-        # Clean country code (doing this will have a knock on effect of removing some dodgy data as well)
-        # 1. Update Country code GGB to GB
+        # Update Country code GGB to GB (data typo)
         df.loc[df['country_code'] == 'GGB', 'country_code'] = 'GB'
-        # 2. Drop rows where country_code not valid
+        # Drop rows where country_code not valid (identifies dodgy data)
         df = df.drop(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
 
-        df = DataCleaning._fix_date(df, 'date_of_birth')
-        df = DataCleaning._fix_date(df, 'join_date')
+        df = DataCleaning._clean_user_date(df, 'date_of_birth')
+        df = DataCleaning._clean_user_date(df, 'join_date')
+
+        # Optimize to reduce memory
+        df['country'] = df['country'].astype('category')
+        df['country_code'] = df['country_code'].astype('category')
 
         return df
 
@@ -42,10 +43,18 @@ class DataCleaning:
         return f"{date_split[1]}-{month:02d}-{date_split[2]}"
 
     @staticmethod
-    def _fix_date(df, column_name):
-        """Fixes date for pandas dataframe, changes made in place"""
-        # Clean date_of_birth, we use newly added month column, once cleaned we can change to a datetime object
+    def _clean_user_date(df, column_name) -> pd.DataFrame:
+        """
+        Clean user date in pandas dataframe, 4 date formats are used
+          -- YYYY-MM-DD
+          -- YYYY Month DD
+          -- Month YYYY DD
+          -- YYYY/MM/DD
+        returns the dataframe with the date standardised to YYYY-MM-DD in pandas Timestamp format
+        """
+        # Add month column to identify dates to clean
         df['month'] = df[column_name].str.slice(5, 7)
+
         df.loc[
             ~df['month'].isin(['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']),
             column_name
@@ -53,7 +62,6 @@ class DataCleaning:
             ~df['month'].isin(['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']),
             column_name
         ].apply(DataCleaning._standardize_dob)
-        # Drop month column
         df = df.drop('month', axis=1)
 
         # date_of_birth change formats which are YYYY/MM/DD to YYYY-MM-DD
