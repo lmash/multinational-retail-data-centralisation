@@ -5,7 +5,7 @@ from data_extraction import DataExtractor
 from database_utils import DatabaseConnector
 
 logging.basicConfig(filename='pipeline.log', encoding='utf-8', level=logging.DEBUG,
-                    format="%(asctime)s [%(levelname)s] %(name)s - %(funcName).20s - %(message)s",)
+                    format="%(asctime)s [%(levelname)s] %(name)s - %(funcName).40s - %(message)s",)
 logger = logging.getLogger(__name__)
 
 
@@ -17,6 +17,7 @@ def setup_database(filename):
 
 
 if __name__ == '__main__':
+    logger.info('****************************** Starting pipeline ******************************')
     db_extractor = DataExtractor()
     cleaner = DataCleaning()
     source_db, source_engine = setup_database(filename='config/db_creds.yaml')
@@ -26,8 +27,13 @@ if __name__ == '__main__':
         extracted = db_extractor.read_rds_table(conn, 'legacy_users')
         extracted.info()
 
-    df = cleaner.clean_user_data(df=extracted)
+    df_users = cleaner.clean_user_data(df=extracted)
 
-    # # Milestone 2 Step 8
+    # Milestone 2 Step 8 - Write users dataframe to target database
     target_db, target_engine = setup_database(filename='config/db_creds_target.yaml')
-    target_db.upload_to_db(target_engine, df=df, table_name='dim_users')
+    target_db.upload_to_db(target_engine, df=df_users, table_name='dim_users')
+
+    # Task 4 Step 2 - Extract card details to dataframe
+    pdf_path = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
+    df_card_details = db_extractor.retrieve_pdf_data(pdf_path=pdf_path)
+    df_card_details = cleaner.clean_card_data(df=df_card_details)

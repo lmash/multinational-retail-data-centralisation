@@ -28,14 +28,14 @@ def test_clean_user_date_slashes():
     """Test function _clean_user_date replaces slashes in a date with '-' and returns a pandas Timestamp"""
     df = pd.DataFrame(data=[['1972/09/09']], columns=['join_date'])
     print(df)
-    cleaned_df = DataCleaning._clean_user_date(df=df, column_name='join_date')
+    cleaned_df = DataCleaning._clean_date(df=df, column_name='join_date')
     assert cleaned_df['join_date'][0] == pd.Timestamp('1972-09-09 00:00:00')
 
 
 def test_clean_user_date_with_month_year_day():
     """Test function _clean_user_date replaces slashes in a date with '-' and returns a pandas Timestamp"""
     df = pd.DataFrame(data=[['July 1973 08']], columns=['join_date'])
-    cleaned_df = DataCleaning._clean_user_date(df=df, column_name='join_date')
+    cleaned_df = DataCleaning._clean_date(df=df, column_name='join_date')
     assert cleaned_df['join_date'][0] == pd.Timestamp('1973-07-08 00:00:00')
 
 
