@@ -1,6 +1,9 @@
+import logging
 import pandas as pd
 import numpy as np
 from time import strptime
+
+logger = logging.getLogger(__name__)
 
 
 class DataCleaning:
@@ -8,6 +11,7 @@ class DataCleaning:
         """
         This function cleans the user data. It removes nulls and associated bad data,
         """
+        logger.info(f"Clean user data")
         # Set the index and sort
         df['index'] = df['index'].astype(np.int16)
         df = df.set_index('index')

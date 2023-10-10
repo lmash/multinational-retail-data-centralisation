@@ -1,11 +1,15 @@
+import logging
 from sqlalchemy import create_engine, inspect
 from typing import Dict
 import yaml
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseConnector:
     def read_db_creds(self, filename: str) -> Dict:
         """This function accepts a filename (with a path) and returns the database credentials"""
+        logger.info(f"Read database credentials from YAML file: {filename}")
         with open(filename, mode='r') as f:
             db_credentials = yaml.safe_load(f)
         return db_credentials
