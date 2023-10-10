@@ -66,7 +66,7 @@ def test_clean_user_data_update_country_code_typo():
          }])
     cleaning = DataCleaning()
     cleaned_df = cleaning.clean_user_data(df=df)
-    assert cleaned_df['country_code'][0] == 'GB'
+    assert cleaned_df['country_code'][7] == 'GB'
 
 
 def test_clean_user_data_remove_rows_with_invalid_country_code():

@@ -8,7 +8,10 @@ class DataCleaning:
         """
         This function cleans the user data. It removes nulls and associated bad data,
         """
+        # Set the index and sort
+        df['index'] = df['index'].astype(np.int16)
         df = df.set_index('index')
+        df = df.sort_index()
 
         # NULLS have come through instead of nan - convert to nan and then delete as missing data
         df.loc[df['last_name'] == 'NULL', 'last_name'] = np.nan
@@ -66,6 +69,6 @@ class DataCleaning:
 
         # date_of_birth change formats which are YYYY/MM/DD to YYYY-MM-DD
         df.loc[df[column_name].str.contains('/'), column_name] = df[column_name].str.replace('/', '-')
-        df.loc[:, column_name] = pd.to_datetime(df[column_name])
+        df[column_name] = pd.to_datetime(df[column_name])
 
         return df

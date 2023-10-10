@@ -22,4 +22,6 @@ class DatabaseConnector:
         table_names = inspector.get_table_names()
         print(table_names)
 
-
+    def upload_to_db(self, engine, df, table_name):
+        """This function accepts a dataframe and uploads it to the table_name"""
+        df.to_sql(table_name, engine, if_exists='replace')
