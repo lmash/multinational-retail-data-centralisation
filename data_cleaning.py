@@ -76,11 +76,12 @@ class DataCleaning:
 
         # Add month column to identify dates to clean
         df['month'] = df[column_name].str.slice(5, 7)
+        month_valid_mask = ~df['month'].isin(self.months)
         df.loc[
-            ~df['month'].isin(self.months),
+            month_valid_mask,
             column_name
         ] = df.loc[
-            ~df['month'].isin(self.months),
+            month_valid_mask,
             column_name
         ].apply(DataCleaning._standardize_dob)
         df = df.drop('month', axis=1)
@@ -123,19 +124,21 @@ class DataCleaning:
     def _set_card_number_and_expiry_date(df) -> pd.DataFrame:
         """Copies values from column 'card_number expiry_date' to card_number and expiry_date"""
         logger.debug(f"Set the card number and expiry dates for nan entries from 'card_number expiry_date'")
+        card_no_expiry_date_mask = ~df['card_number expiry_date'].isna()
+
         df.loc[
-            ~df['card_number expiry_date'].isna(),
+            card_no_expiry_date_mask,
             'card_number'
         ] = df.loc[
-            ~df['card_number expiry_date'].isna(),
+            card_no_expiry_date_mask,
             'card_number expiry_date'
         ].apply(lambda x: x.split()[0])
 
         df.loc[
-            ~df['card_number expiry_date'].isna(),
+            card_no_expiry_date_mask,
             'expiry_date'
         ] = df.loc[
-            ~df['card_number expiry_date'].isna(),
+            card_no_expiry_date_mask,
             'card_number expiry_date'
         ].apply(lambda x: x.split()[1])
 
