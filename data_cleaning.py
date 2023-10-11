@@ -25,9 +25,15 @@ class DataCleaning:
     def _clean_country_code(df) -> pd.DataFrame:
         """Drop rows where country_code not valid (identifies dodgy data). Optimize after dropping"""
         logger.debug(f"Validate country_code")
+
+        # Update Country code GGB to GB (data typo)
+        df.loc[df['country_code'] == 'GGB', 'country_code'] = 'GB'
+
         number_rows = len(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
         logger.debug(f"Dropping {number_rows} rows with invalid country_code")
         df = df.drop(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
+
+        # Change type to optimize
         df['country_code'] = df['country_code'].astype('category')
         return df
 
@@ -86,32 +92,6 @@ class DataCleaning:
         df = df.apply(self._update_address, axis=1)
         return df
 
-    def clean_user_data(self, df):
-        """
-        This function cleans the user data. It removes rows with null and bad data,
-        resolves errors with dates and incorrectly typed values
-        """
-        logger.info(f"Clean user data")
-        df = self._set_index_column_as_index(df)
-
-        # NULLS have come through instead of nan - convert to nan and then delete as missing data
-        df.loc[df['last_name'] == 'NULL', 'last_name'] = np.nan
-        self._log_number_of_rows_to_drop(df=df, subset=['last_name'])
-        df = df.dropna(subset=['last_name'])
-
-        # Update Country code GGB to GB (data typo)
-        df.loc[df['country_code'] == 'GGB', 'country_code'] = 'GB'
-        df = self._clean_country_code(df)
-
-        df = self._clean_date(df, 'date_of_birth')
-        df = self._clean_date(df, 'join_date')
-        df = self._clean_address(df)
-
-        # Optimize to reduce memory
-        df['country'] = df['country'].astype('category')
-
-        return df
-
     @staticmethod
     def _log_number_of_rows_to_drop(df, subset: List):
         """Return number of rows which will be dropped"""
@@ -161,32 +141,27 @@ class DataCleaning:
 
         return df
 
-    def clean_card_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        This function cleans the card data. It removes erroneous values, nulls and associated bad data,
-        and standardizes dates
-        """
-        logger.info(f"Clean card data")
-
-        # Drop rows where card_provider not valid (identifies dodgy data)
+    def _clean_card_provider(self, df) -> pd.DataFrame:
+        """Drop rows where card_provider not valid (identifies dodgy data)"""
         df.loc[
             ~df['card_provider'].isin(DataCleaning.valid_card_providers),
             'card_provider'
         ] = np.nan
         self._log_number_of_rows_to_drop(df=df, subset=['card_provider'])
         df = df.dropna(subset=['card_provider'])
+        return df
 
-        df = self._clean_date(df, 'date_payment_confirmed')
+    def _clean_card_number_expiry_date(self, df) -> pd.DataFrame:
+        """
+        This function uses values in 'card_number expiry_date' column to populate missing values
+        in card_number and expiry_date. It also removes '???'s from card_number
+        """
         df = self._set_card_number_and_expiry_date(df=df)
-
-        # Drop columns 'card_number expiry_date' and 'Unnamed'
-        df = df.drop(axis=1, columns=['card_number expiry_date', 'Unnamed: 0'])
-
-        # Remove the question marks in card_number
         df['card_number'] = df['card_number'].apply(lambda x: str(x).replace('?', ''))
         logger.debug(f"Remove ??'s from column 'card_number'")
 
-        df.reset_index(inplace=True, drop=True)
+        # Drop columns 'card_number expiry_date' and 'Unnamed'
+        df = df.drop(axis=1, columns=['card_number expiry_date', 'Unnamed: 0'])
         return df
 
     @staticmethod
@@ -211,6 +186,45 @@ class DataCleaning:
             'card_number expiry_date'
         ].apply(lambda x: x.split()[1])
 
+        return df
+
+    def _drop_missing_data(self, df) -> pd.DataFrame:
+        """NULLS have come through instead of nan - convert to nan and then delete as missing data"""
+        df.loc[df['last_name'] == 'NULL', 'last_name'] = np.nan
+        self._log_number_of_rows_to_drop(df=df, subset=['last_name'])
+        df = df.dropna(subset=['last_name'])
+        return df
+
+    def clean_user_data(self, df):
+        """
+        This function cleans the user data. It removes rows with null and bad data,
+        resolves errors with dates and incorrectly typed values
+        """
+        logger.info(f"Clean user data")
+        df = self._set_index_column_as_index(df)
+        df = self._drop_missing_data(df)
+        df = self._clean_country_code(df)
+        df = self._clean_date(df, 'date_of_birth')
+        df = self._clean_date(df, 'join_date')
+        df = self._clean_address(df)
+
+        # Optimize to reduce memory
+        df['country'] = df['country'].astype('category')
+
+        return df
+
+    def clean_card_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        This function cleans the card data. It removes erroneous values, nulls and associated bad data,
+        and standardizes dates
+        """
+        logger.info(f"Clean card data")
+
+        df = self._clean_card_provider(df)
+        df = self._clean_date(df, 'date_payment_confirmed')
+        df = self._clean_card_number_expiry_date(df)
+
+        df.reset_index(inplace=True, drop=True)
         return df
 
     def clean_store_data(self, df):

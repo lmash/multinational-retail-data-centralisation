@@ -26,6 +26,7 @@ def setup_database(filename):
 
 def process_user_data(source_db, source_engine, target_db, target_engine):
     """Extract -> Clean -> Load User data"""
+    print(f"Processing User Data")
     extractor, cleaner = DataExtractor(), DataCleaning()
 
     with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
@@ -40,6 +41,7 @@ def process_user_data(source_db, source_engine, target_db, target_engine):
 
 def process_card_data(target_db, target_engine):
     """Extract -> Clean -> Load Card data"""
+    print(f"Processing Card Data")
     extractor, cleaner = DataExtractor(), DataCleaning()
 
     df_card_details = extractor.retrieve_pdf_data(pdf_path=CARD_DATA_PDF_PATH)
@@ -50,6 +52,7 @@ def process_card_data(target_db, target_engine):
 
 def process_product_data(target_db, target_engine):
     """Extract -> Clean -> Load Product data"""
+    print(f"Processing Product Data")
     extractor, cleaner = DataExtractor(), DataCleaning()
 
     headers = {
