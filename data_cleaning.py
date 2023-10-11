@@ -1,6 +1,7 @@
 import logging
 import pandas as pd
 import numpy as np
+import re
 from time import strptime
 from typing import List
 
@@ -13,16 +14,55 @@ class DataCleaning:
                             'VISA 19 digit', 'VISA 16 digit', 'VISA 13 digit']
     months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
+    @staticmethod
+    def _set_index_column_as_index(df) -> pd.DataFrame:
+        """Set the index and sort"""
+        df['index'] = df['index'].astype(np.int16)
+        df = df.set_index('index')
+        return df.sort_index()
+
+    @staticmethod
+    def _validate_country_code(df) -> pd.DataFrame:
+        """Drop rows where country_code not valid (identifies dodgy data). Optimize after dropping"""
+        logger.debug(f"Validate country_code")
+        number_rows = len(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
+        logger.debug(f"Dropping {number_rows} rows with invalid country_code")
+        df = df.drop(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
+        df['country_code'] = df['country_code'].astype('category')
+        return df
+
+    @staticmethod
+    def _validate_continent(df) -> pd.DataFrame:
+        """Fix continent data with typos """
+        logger.debug(f"Validate continent")
+        logger.debug(f"Validate continent")
+        mapping_dictionary = {'eeEurope': 'Europe', 'Europe': 'Europe', 'eeAmerica': 'America', 'America': 'America'}
+        df['continent'].replace(mapping_dictionary, inplace=True)
+        df['continent'] = df['continent'].astype('category')
+        return df
+
+    @staticmethod
+    def _validate_staff_numbers(df) -> pd.DataFrame:
+        """Fix staff numbers with non numbers """
+        logger.debug(f"Validate staff_numbers")
+        df['staff_numbers'] = df['staff_numbers'].apply(lambda x: re.sub("[^0-9]", "", x))
+        df['staff_numbers'] = df['staff_numbers'].astype(np.uint16)
+        return df
+
+    @staticmethod
+    def _validate_lat(df) -> pd.DataFrame:
+        """Drop lat column"""
+        logger.debug(f"Drop 'lat' column")
+        df = df.drop('lat', axis=1)
+        return df
+
     def clean_user_data(self, df):
         """
         This function cleans the user data. It removes rows with null and bad data,
         resolves errors with dates and incorrectly typed values
         """
         logger.info(f"Clean user data")
-        # Set the index and sort
-        df['index'] = df['index'].astype(np.int16)
-        df = df.set_index('index')
-        df = df.sort_index()
+        df = self._set_index_column_as_index(df)
 
         # NULLS have come through instead of nan - convert to nan and then delete as missing data
         df.loc[df['last_name'] == 'NULL', 'last_name'] = np.nan
@@ -31,15 +71,13 @@ class DataCleaning:
 
         # Update Country code GGB to GB (data typo)
         df.loc[df['country_code'] == 'GGB', 'country_code'] = 'GB'
-        # Drop rows where country_code not valid (identifies dodgy data)
-        df = df.drop(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
+        df = self._validate_country_code(df)
 
         df = self._clean_date(df, 'date_of_birth')
         df = self._clean_date(df, 'join_date')
 
         # Optimize to reduce memory
         df['country'] = df['country'].astype('category')
-        df['country_code'] = df['country_code'].astype('category')
 
         return df
 
@@ -144,3 +182,16 @@ class DataCleaning:
 
         return df
 
+    def clean_store_data(self, df):
+        """
+        This function cleans the store data. It removes rows with null and bad data,
+        resolves errors with dates and incorrectly typed values
+        """
+        logger.info(f"Clean store data")
+        df = self._set_index_column_as_index(df)
+        df = self._validate_country_code(df)
+        df = self._validate_continent(df)
+        df = self._clean_date(df, 'opening_date')
+        df = self._validate_staff_numbers(df)
+        df = self._validate_lat(df)
+        return df

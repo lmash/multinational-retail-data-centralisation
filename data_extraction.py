@@ -41,8 +41,7 @@ class DataExtractor:
         for number in range(number_stores):
             store_url = f"{url}{number}"
             logger.info(f"Request store data for {store_url}")
-            response = requests.get(url, headers=headers)
+            response = requests.get(store_url, headers=headers)
             stores.append(response.json())
             logger.debug(f"Adding store data {response.json()}")
-        df = pd.DataFrame(stores)
-        return df
+        return pd.DataFrame(stores)

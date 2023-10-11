@@ -132,3 +132,15 @@ def test_question_marks_removed_from_card_number():
     cleaning = DataCleaning()
     cleaned_df = cleaning.clean_card_data(df=df)
     assert cleaned_df['card_number'][0] == '30060773296198'
+
+
+def test_typos_removed_from_store_data():
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'country_code': 'GB',
+         'continent': 'eeEurope',
+         'opening_date': '2015-11-25'
+         }])
+    cleaning = DataCleaning()
+    cleaned_df = cleaning.clean_store_data(df=df)
+    assert cleaned_df['continent'][0] == 'Europe'
