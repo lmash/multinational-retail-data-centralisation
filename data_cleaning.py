@@ -22,7 +22,7 @@ class DataCleaning:
         return df.sort_index()
 
     @staticmethod
-    def _validate_country_code(df) -> pd.DataFrame:
+    def _clean_country_code(df) -> pd.DataFrame:
         """Drop rows where country_code not valid (identifies dodgy data). Optimize after dropping"""
         logger.debug(f"Validate country_code")
         number_rows = len(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
@@ -32,7 +32,7 @@ class DataCleaning:
         return df
 
     @staticmethod
-    def _validate_continent(df) -> pd.DataFrame:
+    def _clean_continent(df) -> pd.DataFrame:
         """Fix continent data with typos """
         logger.debug(f"Validate continent")
         logger.debug(f"Validate continent")
@@ -42,7 +42,7 @@ class DataCleaning:
         return df
 
     @staticmethod
-    def _validate_staff_numbers(df) -> pd.DataFrame:
+    def _clean_staff_numbers(df) -> pd.DataFrame:
         """Fix staff numbers with non numbers """
         logger.debug(f"Validate staff_numbers")
         df['staff_numbers'] = df['staff_numbers'].apply(lambda x: re.sub("[^0-9]", "", x))
@@ -50,10 +50,44 @@ class DataCleaning:
         return df
 
     @staticmethod
-    def _validate_lat(df) -> pd.DataFrame:
+    def _drop_column_lat(df) -> pd.DataFrame:
         """Drop lat column"""
         logger.debug(f"Drop 'lat' column")
         df = df.drop('lat', axis=1)
+        return df
+
+    @staticmethod
+    def _update_address(row):
+        """
+        Remove locality, which is after the comma. Split by line end
+        The remaining entries are written to address, address_2/3/4 (where entries exist)
+        """
+        address = row['address']
+        columns = ['address', 'address_2', 'address_3', 'address_4']
+
+        locality_removed = address.split(',')[:-1]
+        address = "".join(locality_removed)
+        address_lines = address.split('\n')
+
+        for line, column in zip(address_lines, columns):
+            row[column] = line
+            logger.debug(f"{column} set to {line}")
+
+        return row
+
+    # def _clean_gb(self, df) -> pd.DataFrame:
+    #     df = df.apply(self._update_address, axis=1)
+    #     return df
+
+    def _clean_address(self, df) -> pd.DataFrame:
+        """Add columns address_2, address_3, post_code"""
+        df['address_2'] = np.nan
+        df['address_3'] = np.nan
+        df['address_4'] = np.nan
+        # df = self._clean_gb(df)
+        # df = self._clean_de(df)
+        df = df.apply(self._update_address, axis=1)
+
         return df
 
     def clean_user_data(self, df):
@@ -71,7 +105,7 @@ class DataCleaning:
 
         # Update Country code GGB to GB (data typo)
         df.loc[df['country_code'] == 'GGB', 'country_code'] = 'GB'
-        df = self._validate_country_code(df)
+        df = self._clean_country_code(df)
 
         df = self._clean_date(df, 'date_of_birth')
         df = self._clean_date(df, 'join_date')
@@ -189,9 +223,11 @@ class DataCleaning:
         """
         logger.info(f"Clean store data")
         df = self._set_index_column_as_index(df)
-        df = self._validate_country_code(df)
-        df = self._validate_continent(df)
+        df = self._clean_country_code(df)
+        df = self._clean_continent(df)
         df = self._clean_date(df, 'opening_date')
-        df = self._validate_staff_numbers(df)
-        df = self._validate_lat(df)
+        df = self._clean_staff_numbers(df)
+        df = self._drop_column_lat(df)
+        df = self._clean_address(df)
         return df
+

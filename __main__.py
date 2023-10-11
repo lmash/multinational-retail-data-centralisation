@@ -58,6 +58,8 @@ def process_product_data(target_db, target_engine):
     }
     num_stores = extractor.list_number_of_stores(url=NUMBER_STORES_ENDPOINT_URL, headers=headers)
     df_stores = extractor.retrieve_stores_data(url=STORE_ENDPOINT_URL, headers=headers, number_stores=num_stores)
+    df_stores = cleaner.clean_store_data(df=df_stores)
+    target_db.upload_to_db(target_engine, df=df_stores, table_name='dim_store_details')
 
 
 if __name__ == '__main__':
@@ -65,7 +67,7 @@ if __name__ == '__main__':
     src_db, source_engine = setup_database(filename='config/db_creds.yaml')
     tgt_db, tgt_engine = setup_database(filename='config/db_creds_target.yaml')
 
-    process_user_data(src_db, source_engine, tgt_db, tgt_engine)
-    process_card_data(tgt_db, tgt_engine)
+    # process_user_data(src_db, source_engine, tgt_db, tgt_engine)
+    # process_card_data(tgt_db, tgt_engine)
     process_product_data(tgt_db, tgt_engine)
 
