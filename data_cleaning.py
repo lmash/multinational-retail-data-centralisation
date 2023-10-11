@@ -65,8 +65,10 @@ class DataCleaning:
         address = row['address']
         columns = ['address', 'address_2', 'address_3', 'address_4']
 
-        locality_removed = address.split(',')[:-1]
-        address = "".join(locality_removed)
+        # card addresses have the locality at the end
+        if 'card_number' in row:
+            locality_removed = address.split(',')[:-1]
+            address = "".join(locality_removed)
         address_lines = address.split('\n')
 
         for line, column in zip(address_lines, columns):
@@ -75,19 +77,13 @@ class DataCleaning:
 
         return row
 
-    # def _clean_gb(self, df) -> pd.DataFrame:
-    #     df = df.apply(self._update_address, axis=1)
-    #     return df
-
     def _clean_address(self, df) -> pd.DataFrame:
-        """Add columns address_2, address_3, post_code"""
+        """Add columns address_2, address_3, address_4 and update cleaned address"""
+        logger.info(f"Clean address")
         df['address_2'] = np.nan
         df['address_3'] = np.nan
         df['address_4'] = np.nan
-        # df = self._clean_gb(df)
-        # df = self._clean_de(df)
         df = df.apply(self._update_address, axis=1)
-
         return df
 
     def clean_user_data(self, df):
@@ -109,6 +105,7 @@ class DataCleaning:
 
         df = self._clean_date(df, 'date_of_birth')
         df = self._clean_date(df, 'join_date')
+        df = self._clean_address(df)
 
         # Optimize to reduce memory
         df['country'] = df['country'].astype('category')

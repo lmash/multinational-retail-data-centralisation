@@ -67,7 +67,7 @@ if __name__ == '__main__':
     src_db, source_engine = setup_database(filename='config/db_creds.yaml')
     tgt_db, tgt_engine = setup_database(filename='config/db_creds_target.yaml')
 
-    # process_user_data(src_db, source_engine, tgt_db, tgt_engine)
-    # process_card_data(tgt_db, tgt_engine)
+    process_user_data(src_db, source_engine, tgt_db, tgt_engine)
+    process_card_data(tgt_db, tgt_engine)
     process_product_data(tgt_db, tgt_engine)
 
