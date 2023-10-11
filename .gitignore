@@ -3,3 +3,4 @@ __pycache__
 db_creds.yaml
 db_creds_target.yaml
 *.log
+.env
