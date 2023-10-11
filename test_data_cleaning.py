@@ -64,7 +64,8 @@ def test_clean_user_data_update_country_code_typo():
          'country_code': 'GGB',
          'country': 'United Kingdom',
          'date_of_birth': 'July 1981 07',
-         'join_date': '2021 June 30'
+         'join_date': '2021 June 30',
+         'address': '4 High Street\nLondon'
          }])
     cleaning = DataCleaning()
     cleaned_df = cleaning.clean_user_data(df=df)
@@ -74,11 +75,11 @@ def test_clean_user_data_update_country_code_typo():
 def test_clean_user_data_remove_rows_with_invalid_country_code():
     """Test function clean_user_data removes rows where the country_code is not in ('GB', 'US', 'DE')"""
     df = pd.DataFrame(data=[
-        ['1', 'XSHGSJH', 'XSHGSJH', 'XSHGSJH', 'XSHGSJH', 'XSHGSJH'],
-        ['2', 'Black', 'GB', 'United Kingdom', '1999-01-01', '2021-01-01'],
-        ['3', 'Red', 'DE', 'Germany', '1999-01-01', '2021-01-01'],
-        ['4', 'Green', 'US', 'United States', '1999-01-01', '2021-01-01'],
-    ], columns=['index', 'last_name', 'country_code', 'country', 'date_of_birth', 'join_date'])
+        ['1', 'XSHGSJH', 'XSHGSJH', 'XSHGSJH', 'XSHGSJH', 'XSHGSJH', ''],
+        ['2', 'Black', 'GB', 'United Kingdom', '1999-01-01', '2021-01-01', '4 High Street\nLondon'],
+        ['3', 'Red', 'DE', 'Germany', '1999-01-01', '2021-01-01', '4 Hoch Straß\nBerlin'],
+        ['4', 'Green', 'US', 'United States', '1999-01-01', '2021-01-01', '4 Whatever Street\nChicago'],
+    ], columns=['index', 'last_name', 'country_code', 'country', 'date_of_birth', 'join_date', 'address'])
     cleaning = DataCleaning()
     cleaned_df = cleaning.clean_user_data(df=df)
     assert all(cleaned_df['country_code'] == ['GB', 'DE', 'US']) is True
@@ -139,7 +140,10 @@ def test_typos_removed_from_store_data():
         {'index': '0',
          'country_code': 'GB',
          'continent': 'eeEurope',
-         'opening_date': '2015-11-25'
+         'opening_date': '2015-11-25',
+         'staff_numbers': '7',
+         'lat': np.nan,
+         'address': '4 High Street\nLondon, Greater London'
          }])
     cleaning = DataCleaning()
     cleaned_df = cleaning.clean_store_data(df=df)
