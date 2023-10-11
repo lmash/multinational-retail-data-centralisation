@@ -31,10 +31,12 @@ if __name__ == '__main__':
 
     # Milestone 2 Step 8 - Write users dataframe to target database
     target_db, target_engine = setup_database(filename='config/db_creds_target.yaml')
+    assert len(df_users.index) == 15284
     target_db.upload_to_db(target_engine, df=df_users, table_name='dim_users')
 
     # Task 4 Step 2 - Extract card details to dataframe
     pdf_path = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
     df_card_details = db_extractor.retrieve_pdf_data(pdf_path=pdf_path)
     df_card_details = cleaner.clean_card_data(df=df_card_details)
+    assert len(df_users.df_card_details) == 15284
     target_db.upload_to_db(target_engine, df=df_card_details, table_name='dim_card_details')
