@@ -37,3 +37,4 @@ if __name__ == '__main__':
     pdf_path = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
     df_card_details = db_extractor.retrieve_pdf_data(pdf_path=pdf_path)
     df_card_details = cleaner.clean_card_data(df=df_card_details)
+    target_db.upload_to_db(target_engine, df=df_card_details, table_name='dim_card_details')

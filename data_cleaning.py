@@ -93,7 +93,8 @@ class DataCleaning:
 
     def clean_card_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        This function cleans the card data. It removes nulls and associated bad data,
+        This function cleans the card data. It removes erroneous values, nulls and associated bad data,
+        and standardizes dates
         """
         logger.info(f"Clean card data")
 
@@ -115,6 +116,7 @@ class DataCleaning:
         df['card_number'] = df['card_number'].apply(lambda x: str(x).replace('?', ''))
         logger.debug(f"Remove ??'s from column 'card_number'")
 
+        df.reset_index(inplace=True, drop=True)
         return df
 
     @staticmethod
