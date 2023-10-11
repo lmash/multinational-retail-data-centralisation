@@ -11,6 +11,7 @@ class DataCleaning:
     valid_card_providers = ['Diners Club / Carte Blanche', 'American Express', 'JCB 16 digit',
                             'JCB 15 digit', 'Maestro', 'Mastercard', 'Discover',
                             'VISA 19 digit', 'VISA 16 digit', 'VISA 13 digit']
+    months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
     def clean_user_data(self, df):
         """
@@ -33,8 +34,8 @@ class DataCleaning:
         # Drop rows where country_code not valid (identifies dodgy data)
         df = df.drop(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
 
-        df = DataCleaning._clean_date(df, 'date_of_birth')
-        df = DataCleaning._clean_date(df, 'join_date')
+        df = self._clean_date(df, 'date_of_birth')
+        df = self._clean_date(df, 'join_date')
 
         # Optimize to reduce memory
         df['country'] = df['country'].astype('category')
@@ -62,8 +63,7 @@ class DataCleaning:
         month = strptime(date_split[0], '%B').tm_mon
         return f"{date_split[1]}-{month:02d}-{date_split[2]}"
 
-    @staticmethod
-    def _clean_date(df, column_name) -> pd.DataFrame:
+    def _clean_date(self, df, column_name) -> pd.DataFrame:
         """
         Clean user date in pandas dataframe, 4 date formats are used
           -- YYYY-MM-DD
@@ -72,19 +72,20 @@ class DataCleaning:
           -- YYYY/MM/DD
         returns the dataframe with the date standardised to YYYY-MM-DD in pandas Timestamp format
         """
+        logger.info(f"Clean date {column_name}")
+
         # Add month column to identify dates to clean
         df['month'] = df[column_name].str.slice(5, 7)
-
         df.loc[
-            ~df['month'].isin(['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']),
+            ~df['month'].isin(self.months),
             column_name
         ] = df.loc[
-            ~df['month'].isin(['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']),
+            ~df['month'].isin(self.months),
             column_name
         ].apply(DataCleaning._standardize_dob)
         df = df.drop('month', axis=1)
 
-        # date_of_birth change formats which are YYYY/MM/DD to YYYY-MM-DD
+        # Change formats which are YYYY/MM/DD to YYYY-MM-DD
         df[column_name] = df[column_name].apply(lambda x: x.replace('/', '-'))
         df[column_name] = pd.to_datetime(df[column_name])
 
@@ -112,13 +113,14 @@ class DataCleaning:
 
         # Remove the question marks in card_number
         df['card_number'] = df['card_number'].apply(lambda x: str(x).replace('?', ''))
+        logger.debug(f"Remove ??'s from column 'card_number'")
 
         return df
 
     @staticmethod
     def _set_card_number_and_expiry_date(df) -> pd.DataFrame:
         """Copies values from column 'card_number expiry_date' to card_number and expiry_date"""
-        logger.debug(f"Clean card data")
+        logger.debug(f"Set the card number and expiry dates for nan entries from 'card_number expiry_date'")
         df.loc[
             ~df['card_number expiry_date'].isna(),
             'card_number'

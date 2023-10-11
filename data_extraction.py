@@ -19,7 +19,8 @@ class DataExtractor:
         logger.info(f"Read pdf file from path {pdf_path}")
         df = pd.DataFrame(columns=['card_number', 'expiry_date', 'card_provider', 'date_payment_confirmed'])
 
-        cards = tabula.read_pdf(pdf_path, stream=True, pages="all")
+        cards = tabula.read_pdf(pdf_path, stream=True)
+        # cards = tabula.read_pdf(pdf_path, stream=True, pages="all")
         for card in cards:
             df = pd.concat([df, card])
         return df
