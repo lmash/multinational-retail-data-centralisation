@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 import numpy as np
 
 from data_cleaning import DataCleaning
@@ -148,3 +149,99 @@ def test_typos_removed_from_store_data():
     cleaning = DataCleaning()
     cleaned_df = cleaning.clean_store_data(df=df)
     assert cleaned_df['continent'][0] == 'Europe'
+
+
+def test_clean_product_data_removes_rows_with_invalid_category():
+    """Test function clean_product_data removes rows where the category not valid"""
+    row_with_invalid_category = ['1']
+    row_with_invalid_category.extend(['XXXXXX'] * 9)
+
+    row_with_na = ['3']
+    row_with_na.extend([np.nan]*9)
+
+    df = pd.DataFrame(data=[
+        row_with_invalid_category,
+        ['2', 'Dog food', '£4.49', '12 x 100g', 'pets', '2439834307647', '1995-06-25',
+         '5ec5a431-7330-4d9e-bf3c-702fc85f6efe', 'Still_avaliable', 'd4-9698287C'],
+    ], columns=['index', 'product_name', 'product_price', 'weight', 'category', 'EAN', 'date_added', 'uuid',
+                'removed', 'product_code'])
+    cleaning = DataCleaning()
+    cleaned_df = cleaning.clean_product_data(df=df)
+    assert all(cleaned_df['category'].isin(cleaning.valid_categories)) is True
+
+
+def test_convert_product_weights_with_a_number_of_items():
+    """Weight with a number of items in format 2 x 400g converted to Kg of total weight as a float"""
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'weight': '2 x 200g'
+         }])
+    cleaning = DataCleaning()
+    cleaned_df = cleaning.convert_product_weights(df=df)
+    assert cleaned_df['weight'][0] == 0.4
+
+
+def test_convert_product_weights_with_ml():
+    """Weight in ml converted to Kg as a float"""
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'weight': '600ml'
+         }])
+    cleaning = DataCleaning()
+    cleaned_df = cleaning.convert_product_weights(df=df)
+    assert cleaned_df['weight'][0] == 0.6
+
+
+def test_convert_product_weights_with_kg():
+    """Weight in kg has suffix removed as a float"""
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'weight': '0.6kg'
+         }])
+    cleaning = DataCleaning()
+    cleaned_df = cleaning.convert_product_weights(df=df)
+    assert cleaned_df['weight'][0] == 0.6
+
+
+def test_convert_product_weights_with_oz():
+    """Weight in oz converted to kg as a float"""
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'weight': '16oz'
+         }])
+    cleaning = DataCleaning()
+    cleaned_df = cleaning.convert_product_weights(df=df)
+    assert cleaned_df['weight'][0] == pytest.approx(0.4536, rel=0.001)
+
+
+def test_product_weight_remove_invalid_characters():
+    """Weights ending in ' .' are cleaned and converted to kg as a float"""
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'weight': '16g .'
+         }])
+    cleaning = DataCleaning()
+    cleaned_df = cleaning.convert_product_weights(df=df)
+    assert cleaned_df['weight'][0] == 0.016
+
+
+def test_convert_product_weights_with_g():
+    """Weight in g converted to kg as a float"""
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'weight': '11.6g'
+         }])
+    cleaning = DataCleaning()
+    cleaned_df = cleaning.convert_product_weights(df=df)
+    assert cleaned_df['weight'][0] == 0.0116
+
+
+def test_clean_product_price():
+    """Weight in g converted to kg as a float"""
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'product_price': '£4.99'
+         }])
+    cleaning = DataCleaning()
+    cleaned_df = cleaning._clean_product_price(df=df)
+    assert cleaned_df['product_price'][0] == 4.99

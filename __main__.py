@@ -30,10 +30,10 @@ def process_product_data(target_db, target_engine):
     print(f"Processing Product Data")
     extractor, cleaner = DataExtractor(), DataCleaning()
 
-    df_product_details = extractor.extract_from_s3(s3_address=S3_ADDRESS)
-    # df_product_details = cleaner.clean_card_data(df=df_card_details)
-    # assert len(df_product_details.index) == 15284
-    # target_db.upload_to_db(target_engine, df=df_product_details, table_name='dim_card_details')
+    df_products = extractor.extract_from_s3(s3_address=S3_ADDRESS)
+    df_products = cleaner.clean_product_data(df=df_products)
+    assert len(df_products.index) == 1846
+    target_db.upload_to_db(target_engine, df=df_products, table_name='dim_products')
 
 
 def process_store_data(target_db, target_engine):
@@ -83,8 +83,8 @@ if __name__ == '__main__':
     src_db, src_engine = setup_database(filename='config/db_creds.yaml')
     tgt_db, tgt_engine = setup_database(filename='config/db_creds_target.yaml')
 
-    # process_user_data(src_db, src_engine, tgt_db, tgt_engine)
-    # process_card_data(tgt_db, tgt_engine)
-    # process_store_data(tgt_db, tgt_engine)
+    process_user_data(src_db, src_engine, tgt_db, tgt_engine)
+    process_card_data(tgt_db, tgt_engine)
+    process_store_data(tgt_db, tgt_engine)
     process_product_data(tgt_db, tgt_engine)
 

@@ -13,6 +13,10 @@ class DataCleaning:
                             'JCB 15 digit', 'Maestro', 'Mastercard', 'Discover',
                             'VISA 19 digit', 'VISA 16 digit', 'VISA 13 digit']
     months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    valid_categories = ['toys-and-games', 'sports-and-leisure', 'pets', 'homeware', 'health-and-beauty',
+                        'food-and-drink', 'diy']
+    KG_TO_OZ = 35.274
+    KG_TO_G = 1000
 
     @staticmethod
     def _set_index_column_as_index(df) -> pd.DataFrame:
@@ -37,11 +41,25 @@ class DataCleaning:
         df['country_code'] = df['country_code'].astype('category')
         return df
 
+    def _clean_category(self, df) -> pd.DataFrame:
+        """Drop rows where category not valid (identifies dodgy data). Optimize after dropping"""
+        logger.debug(f"Clean data in column category")
+        df.loc[
+            ~df['category'].isin(self.valid_categories),
+            'category'
+        ] = np.nan
+
+        self._log_number_of_rows_to_drop(df=df, subset=['category'])
+        df = df.dropna(subset=['category'])
+
+        # Change type to optimize
+        df['category'] = df['category'].astype('category')
+        return df
+
     @staticmethod
     def _clean_continent(df) -> pd.DataFrame:
         """Fix continent data with typos """
-        logger.debug(f"Validate continent")
-        logger.debug(f"Validate continent")
+        logger.debug(f"Clean data in column continent")
         mapping_dictionary = {'eeEurope': 'Europe', 'Europe': 'Europe', 'eeAmerica': 'America', 'America': 'America'}
         df['continent'].replace(mapping_dictionary, inplace=True)
         df['continent'] = df['continent'].astype('category')
@@ -50,7 +68,7 @@ class DataCleaning:
     @staticmethod
     def _clean_staff_numbers(df) -> pd.DataFrame:
         """Fix staff numbers with non numbers """
-        logger.debug(f"Validate staff_numbers")
+        logger.debug(f"Clean data in column staff_numbers")
         df['staff_numbers'] = df['staff_numbers'].apply(lambda x: re.sub("[^0-9]", "", x))
         df['staff_numbers'] = df['staff_numbers'].astype(np.uint16)
         return df
@@ -85,7 +103,7 @@ class DataCleaning:
 
     def _clean_address(self, df) -> pd.DataFrame:
         """Add columns address_2, address_3, address_4 and update cleaned address"""
-        logger.info(f"Clean address")
+        logger.debug(f"Clean data in column address")
         df['address_2'] = np.nan
         df['address_3'] = np.nan
         df['address_4'] = np.nan
@@ -121,7 +139,7 @@ class DataCleaning:
           -- YYYY/MM/DD
         returns the dataframe with the date standardised to YYYY-MM-DD in pandas Timestamp format
         """
-        logger.info(f"Clean date {column_name}")
+        logger.info(f"Clean data in date column {column_name}")
 
         # Add month column to identify dates to clean
         df['month'] = df[column_name].str.slice(5, 7)
@@ -143,6 +161,7 @@ class DataCleaning:
 
     def _clean_card_provider(self, df) -> pd.DataFrame:
         """Drop rows where card_provider not valid (identifies dodgy data)"""
+        logger.debug(f"Clean data in column card_provider")
         df.loc[
             ~df['card_provider'].isin(DataCleaning.valid_card_providers),
             'card_provider'
@@ -156,6 +175,7 @@ class DataCleaning:
         This function uses values in 'card_number expiry_date' column to populate missing values
         in card_number and expiry_date. It also removes '???'s from card_number
         """
+        logger.debug(f"Clean data in columns card_number and expiry_date")
         df = self._set_card_number_and_expiry_date(df=df)
         df['card_number'] = df['card_number'].apply(lambda x: str(x).replace('?', ''))
         logger.debug(f"Remove ??'s from column 'card_number'")
@@ -193,6 +213,80 @@ class DataCleaning:
         df.loc[df['last_name'] == 'NULL', 'last_name'] = np.nan
         self._log_number_of_rows_to_drop(df=df, subset=['last_name'])
         df = df.dropna(subset=['last_name'])
+        return df
+
+    @staticmethod
+    def _rename_product_columns(df) -> pd.DataFrame:
+        df = df.rename(columns={'Unnamed: 0': 'index'})
+        return df
+
+    def _calculate_total_weight(self, weight: str) -> str:
+        """Accepts a weight of a number of items e.g. 2 x 200g Returns total weight in Kg"""
+        number_items = weight.split(' ')
+        item_weight = number_items[-1]
+        total_weight = int(number_items[0]) * int(item_weight.rstrip('g'))
+        return f"{total_weight/self.KG_TO_G}"
+
+    def _convert_weight_from_oz_to_kg(self, weight: str) -> str:
+        """Accepts a weight in oz e.g. 200oz Returns weight in Kg rounded to 3dp"""
+        weight_in_oz = int(weight.rstrip('oz'))
+        return f"{round(weight_in_oz/self.KG_TO_OZ, 3)}"
+
+    def _convert_weight_from_g_to_kg(self, weight: str) -> str:
+        """Accepts a weight in g e.g. 200g Returns weight in Kg"""
+        weight_in_g = float(weight.rstrip('g'))
+        return f"{weight_in_g/self.KG_TO_G}"
+
+    def convert_product_weights(self, df) -> pd.DataFrame:
+        """
+        Converts a mixture of weight data to kg in float
+        Order of conversion must be maintained
+          - Weights with multiple items e.g. 2 x 200g converted to 0.4
+          - Weights with ml as converted 1:1 to g (to be updated to kg after)
+          - Weights with kg suffix remove the suffix
+          - Weights with oz converted to kg
+          - Weights with invalid characters cleaned up
+          - Weights with g converted to kg
+        """
+        logger.debug(f"Clean data in column weight")
+        df_total_weight = df[df['weight'].str.contains('x')].copy()
+        df_total_weight['weight'] = df_total_weight['weight'].apply(self._calculate_total_weight)
+        df.update(df_total_weight)
+
+        df_weight_in_ml = df[df['weight'].str.contains('ml')].copy()
+        df_weight_in_ml['weight'] = df_weight_in_ml['weight'].str.replace('ml', 'g')
+        df.update(df_weight_in_ml)
+
+        df_weight_in_kg = df[df['weight'].str.contains('kg')].copy()
+        df_weight_in_kg['weight'] = df_weight_in_kg['weight'].str.replace('kg', '')
+        df.update(df_weight_in_kg)
+
+        df_weight_in_oz = df[df['weight'].str.contains('oz')].copy()
+        df_weight_in_oz['weight'] = df_weight_in_oz['weight'].apply(self._convert_weight_from_oz_to_kg)
+        df.update(df_weight_in_oz)
+
+        df_invalid_chars = df[df['weight'].str.endswith(' .')].copy()
+        df_invalid_chars['weight'] = df_invalid_chars['weight'].str.replace(' .', '')
+        df.update(df_invalid_chars)
+
+        df_weight_in_g = df[df['weight'].str.contains('g')].copy()
+        df_weight_in_g['weight'] = df_weight_in_g['weight'].apply(self._convert_weight_from_g_to_kg)
+        df.update(df_weight_in_g)
+
+        df['weight'] = df['weight'].astype('float')
+        return df
+
+    @staticmethod
+    def _clean_product_price(df):
+        """This function cleans product price by removing the £ character and converting to float"""
+        logger.debug(f"Clean data in column product_price")
+        df.loc[
+            df['product_price'].str.contains('£'),
+            'product_price'] = df.loc[
+            df['product_price'].str.contains('£'),
+            'product_price'].str.replace('£', '')
+
+        df['product_price'] = df['product_price'].astype('float')
         return df
 
     def clean_user_data(self, df):
@@ -237,5 +331,23 @@ class DataCleaning:
         df = self._clean_staff_numbers(df)
         df = self._drop_column_lat(df)
         df = self._clean_address(df)
+        return df
+
+    def clean_product_data(self, df):
+        """
+        This function cleans the product data. It removes rows with null and bad data,
+        resolves errors with dates and incorrectly typed values. Its also converts all
+        product weights to be in kg.
+        """
+        logger.info(f"Clean product data")
+        df = self._rename_product_columns(df)
+        df = self._set_index_column_as_index(df)
+        df = self._clean_category(df)
+        df = self._clean_product_price(df)
+        df = self._clean_date(df, 'date_added')
+        df = self.convert_product_weights(df)
+
+        # Optimize to reduce memory
+        df['removed'] = df['removed'].astype('category')
         return df
 
