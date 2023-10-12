@@ -15,6 +15,7 @@ CARD_DATA_PDF_PATH = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/ca
 API_KEY = os.getenv('x-api-key')
 NUMBER_STORES_ENDPOINT_URL = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores'
 STORE_ENDPOINT_URL = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details/'
+S3_ADDRESS = 's3://data-handling-public/products.csv'
 
 
 def setup_database(filename):
@@ -22,6 +23,44 @@ def setup_database(filename):
     db_credentials = db_conn.read_db_creds(filename)
     engine = db_conn.init_db_engine(db_credentials)
     return db_conn, engine
+
+
+def process_product_data(target_db, target_engine):
+    """Extract -> Clean -> Load Product data"""
+    print(f"Processing Product Data")
+    extractor, cleaner = DataExtractor(), DataCleaning()
+
+    df_product_details = extractor.extract_from_s3(s3_address=S3_ADDRESS)
+    # df_product_details = cleaner.clean_card_data(df=df_card_details)
+    # assert len(df_product_details.index) == 15284
+    # target_db.upload_to_db(target_engine, df=df_product_details, table_name='dim_card_details')
+
+
+def process_store_data(target_db, target_engine):
+    """Extract -> Clean -> Load Store data"""
+    print(f"Processing Store Data")
+    extractor, cleaner = DataExtractor(), DataCleaning()
+
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-KEY": API_KEY
+    }
+    num_stores = extractor.list_number_of_stores(url=NUMBER_STORES_ENDPOINT_URL, headers=headers)
+    df_stores = extractor.retrieve_stores_data(url=STORE_ENDPOINT_URL, headers=headers, number_stores=num_stores)
+    df_stores = cleaner.clean_store_data(df=df_stores)
+    assert len(df_stores.index) == 441
+    target_db.upload_to_db(target_engine, df=df_stores, table_name='dim_store_details')
+
+
+def process_card_data(target_db, target_engine):
+    """Extract -> Clean -> Load Card data"""
+    print(f"Processing Card Data")
+    extractor, cleaner = DataExtractor(), DataCleaning()
+
+    df_card_details = extractor.retrieve_pdf_data(pdf_path=CARD_DATA_PDF_PATH)
+    df_card_details = cleaner.clean_card_data(df=df_card_details)
+    assert len(df_card_details.index) == 15284
+    target_db.upload_to_db(target_engine, df=df_card_details, table_name='dim_card_details')
 
 
 def process_user_data(source_db, source_engine, target_db, target_engine):
@@ -39,38 +78,13 @@ def process_user_data(source_db, source_engine, target_db, target_engine):
     target_db.upload_to_db(target_engine, df=df_users, table_name='dim_users')
 
 
-def process_card_data(target_db, target_engine):
-    """Extract -> Clean -> Load Card data"""
-    print(f"Processing Card Data")
-    extractor, cleaner = DataExtractor(), DataCleaning()
-
-    df_card_details = extractor.retrieve_pdf_data(pdf_path=CARD_DATA_PDF_PATH)
-    df_card_details = cleaner.clean_card_data(df=df_card_details)
-    assert len(df_card_details.index) == 15284
-    target_db.upload_to_db(target_engine, df=df_card_details, table_name='dim_card_details')
-
-
-def process_product_data(target_db, target_engine):
-    """Extract -> Clean -> Load Product data"""
-    print(f"Processing Product Data")
-    extractor, cleaner = DataExtractor(), DataCleaning()
-
-    headers = {
-        "Content-Type": "application/json",
-        "X-API-KEY": API_KEY
-    }
-    num_stores = extractor.list_number_of_stores(url=NUMBER_STORES_ENDPOINT_URL, headers=headers)
-    df_stores = extractor.retrieve_stores_data(url=STORE_ENDPOINT_URL, headers=headers, number_stores=num_stores)
-    df_stores = cleaner.clean_store_data(df=df_stores)
-    target_db.upload_to_db(target_engine, df=df_stores, table_name='dim_store_details')
-
-
 if __name__ == '__main__':
     logger.info('****************************** Starting pipeline ******************************')
-    src_db, source_engine = setup_database(filename='config/db_creds.yaml')
+    src_db, src_engine = setup_database(filename='config/db_creds.yaml')
     tgt_db, tgt_engine = setup_database(filename='config/db_creds_target.yaml')
 
-    process_user_data(src_db, source_engine, tgt_db, tgt_engine)
-    process_card_data(tgt_db, tgt_engine)
+    # process_user_data(src_db, src_engine, tgt_db, tgt_engine)
+    # process_card_data(tgt_db, tgt_engine)
+    # process_store_data(tgt_db, tgt_engine)
     process_product_data(tgt_db, tgt_engine)
 

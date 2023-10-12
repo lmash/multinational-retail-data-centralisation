@@ -210,7 +210,6 @@ class DataCleaning:
 
         # Optimize to reduce memory
         df['country'] = df['country'].astype('category')
-
         return df
 
     def clean_card_data(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -219,11 +218,9 @@ class DataCleaning:
         and standardizes dates
         """
         logger.info(f"Clean card data")
-
         df = self._clean_card_provider(df)
         df = self._clean_date(df, 'date_payment_confirmed')
         df = self._clean_card_number_expiry_date(df)
-
         df.reset_index(inplace=True, drop=True)
         return df
 
