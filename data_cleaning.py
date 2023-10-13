@@ -152,17 +152,15 @@ class DataCleaning:
         be very sure this is the case before using this!)
         """
         logger.debug(f"Clean data in column {column}")
+        invalid_entries_mask = ~df[column].isin(valid_entries).copy()
+
         df.loc[
-            ~df[column].isin(valid_entries),
+            invalid_entries_mask,
             column
         ] = np.nan
 
         self._log_number_of_rows_to_drop(df=df, subset=[column])
-        df = df.dropna(subset=[column])
-
-        # TODO do we need to create a category now?
-        # Change type to optimize
-        df[column] = df[column].astype('category')
+        df.dropna(subset=[column], inplace=True)
         return df
 
     def _clean_card_number_expiry_date(self, df) -> pd.DataFrame:
@@ -286,6 +284,13 @@ class DataCleaning:
         return df
 
     @staticmethod
+    def _add_date_column(df) -> pd.DataFrame:
+        """Add a date column by concatenating year, month, day and timestamp"""
+        df['date'] = df['year'] + '-' + df['month'] + '-' + df['day'] + ' ' + df['timestamp']
+        df['date'] = pd.to_datetime(df['date'])
+        return df
+
+    @staticmethod
     def _drop_columns(df, columns: List):
         """Drop columns first_name, last_name, 1"""
         logger.debug(f"Drop columns {columns}")
@@ -370,4 +375,18 @@ class DataCleaning:
         logger.info(f"Clean orders data")
         df = self._drop_columns(df, columns=['first_name', 'last_name', '1', 'level_0'])
         df = self._set_index_column_as_index(df)
+        return df
+
+    def clean_date_times_data(self, df) -> pd.DataFrame:
+        """
+        This function cleans the date_times data. It removes rows with null and bad data,
+        resolves errors with dates and incorrectly typed values.
+        """
+        logger.info(f"Clean date_times data")
+        df = self._drop_rows_with_invalid_entries(
+            df=df,
+            column=self.valid_entries.column_name,
+            valid_entries=self.valid_entries.entries
+        )
+        df = self._add_date_column(df)
         return df

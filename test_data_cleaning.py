@@ -42,6 +42,12 @@ def order_cleaner():
     return DataCleaning()
 
 
+@pytest.fixture
+def date_time_cleaner():
+    """Returns a DataCleaning instance for a Store"""
+    return DataCleaning(column_entries=ColumnEntries(column_name='month', entries=DataCleaning.valid_months))
+
+
 def test_date_of_birth_with_year_month_day(user_cleaner):
     """Test function _standardize_dob returns correct format where YYYY Month DD provided"""
     date_of_birth = '1968 October 16'
@@ -275,6 +281,18 @@ def test_drop_columns(order_cleaner):
          'last_name': 'NULL',
          }])
     cleaned_df = order_cleaner._drop_columns(df, columns=['first_name', 'last_name'])
-    assert 'first_name' not in  cleaned_df.columns
-    assert 'last_name' not in  cleaned_df.columns
+    assert 'first_name' not in cleaned_df.columns
+    assert 'last_name' not in cleaned_df.columns
     assert 'index' in cleaned_df.columns
+
+
+def test_add_date_column(date_time_cleaner):
+    """New column created which concatenates year, month, day and timestamp"""
+    df = pd.DataFrame(data=[
+        {'timestamp': '22:00:06',
+         'month': '3',
+         'year': '1972',
+         'day': '28',
+         }])
+    cleaned_df = date_time_cleaner._add_date_column(df)
+    assert cleaned_df['date'][0] == pd.Timestamp('1972-03-28 22:00:06')

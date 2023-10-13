@@ -17,8 +17,7 @@ API_KEY = os.getenv('x-api-key')
 NUMBER_STORES_ENDPOINT_URL = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores'
 STORE_ENDPOINT_URL = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details/'
 PRODUCTS_S3_ADDRESS = 's3://data-handling-public/products.csv'
-# DATE_TIMES_S3_ADDRESS = ' https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json'
-DATE_TIMES_S3_ADDRESS = ' s3://data-handling-public/date_details.json'
+DATE_TIMES_S3_ADDRESS = 's3://data-handling-public/date_details.json'
 
 
 def setup_database(filename):
@@ -31,10 +30,11 @@ def setup_database(filename):
 def process_date_times_data(target_db, target_engine):
     """Extract -> Clean -> Load Product data"""
     print(f"Processing Date & Times Data")
-    extractor, cleaner = DataExtractor(), DataCleaning()
+    extractor = DataExtractor()
+    cleaner = DataCleaning(column_entries=ColumnEntries(column_name='month', entries=DataCleaning.valid_months))
 
     df_date_times = extractor.extract_from_s3(s3_address=DATE_TIMES_S3_ADDRESS)
-    # df_date_times = cleaner.clean_product_data(df=df_date_times)
+    df_date_times = cleaner.clean_date_times_data(df=df_date_times)
     # assert len(df_date_times.index) == 1846
     # target_db.upload_to_db(target_engine, df=df_date_times, table_name='dim_date_times')
 
@@ -120,4 +120,4 @@ if __name__ == '__main__':
     process_store_data(tgt_db, tgt_engine)
     process_product_data(tgt_db, tgt_engine)
     process_order_data(src_db, src_engine, tgt_db, tgt_engine)
-    # process_date_times_data(tgt_db, tgt_engine)
+    process_date_times_data(tgt_db, tgt_engine)
