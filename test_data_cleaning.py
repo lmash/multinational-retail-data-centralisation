@@ -36,6 +36,12 @@ def store_cleaner():
     return DataCleaning()
 
 
+@pytest.fixture
+def order_cleaner():
+    """Returns a DataCleaning instance for a Store"""
+    return DataCleaning()
+
+
 def test_date_of_birth_with_year_month_day(user_cleaner):
     """Test function _standardize_dob returns correct format where YYYY Month DD provided"""
     date_of_birth = '1968 October 16'
@@ -258,3 +264,17 @@ def test_clean_product_price(product_cleaner):
          }])
     cleaned_df = product_cleaner._clean_product_price(df=df)
     assert cleaned_df['product_price'][0] == 4.99
+
+
+def test_drop_columns(order_cleaner):
+    """Columns are dropped"""
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'product_quantity': '3',
+         'first_name': 'NULL',
+         'last_name': 'NULL',
+         }])
+    cleaned_df = order_cleaner._drop_columns(df, columns=['first_name', 'last_name'])
+    assert 'first_name' not in  cleaned_df.columns
+    assert 'last_name' not in  cleaned_df.columns
+    assert 'index' in cleaned_df.columns

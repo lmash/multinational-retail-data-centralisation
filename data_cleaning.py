@@ -69,13 +69,6 @@ class DataCleaning:
         return df
 
     @staticmethod
-    def _drop_column_lat(df) -> pd.DataFrame:
-        """Drop lat column"""
-        logger.debug(f"Drop 'lat' column")
-        df = df.drop('lat', axis=1)
-        return df
-
-    @staticmethod
     def _update_address(row):
         """
         Remove locality, which is after the comma. Split by line end
@@ -293,10 +286,10 @@ class DataCleaning:
         return df
 
     @staticmethod
-    def _drop_orders_columns(df) -> pd.DataFrame:
-        """Drop orders columns first_name, last_name, 1"""
-        logger.debug(f"Drop orders columns first_name, last_name, 1")
-        df = df.drop(['first_name', 'last_name', '1', 'level_0'], axis=1)
+    def _drop_columns(df, columns: List):
+        """Drop columns first_name, last_name, 1"""
+        logger.debug(f"Drop columns {columns}")
+        df = df.drop(columns, axis=1)
         return df
 
     def clean_user_data(self, df):
@@ -343,7 +336,7 @@ class DataCleaning:
         df = self._clean_continent(df)
         df = self._clean_date(df, 'opening_date')
         df = self._clean_staff_numbers(df)
-        df = self._drop_column_lat(df)
+        df = self._drop_columns(df, columns=['lat'])
         df = self._clean_address(df)
         return df
 
@@ -369,12 +362,12 @@ class DataCleaning:
         df['removed'] = df['removed'].astype('category')
         return df
 
-    def clean_orders_data(self, df) -> pd.DataFrame:
+    def clean_order_data(self, df) -> pd.DataFrame:
         """
         This function cleans the orders data. It removes rows with null and bad data,
         resolves errors with dates and incorrectly typed values.
         """
         logger.info(f"Clean orders data")
-        df = self._drop_orders_columns(df)
+        df = self._drop_columns(df, columns=['first_name', 'last_name', '1', 'level_0'])
         df = self._set_index_column_as_index(df)
         return df

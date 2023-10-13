@@ -47,7 +47,7 @@ def process_order_data(source_db, source_engine, target_db, target_engine):
     with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
         extracted = extractor.read_rds_table(conn, 'orders_table')
 
-    df_orders = cleaner.clean_orders_data(df=extracted)
+    df_orders = cleaner.clean_order_data(df=extracted)
     assert len(df_orders.index) == 120123
     target_db.upload_to_db(target_engine, df=df_orders, table_name='orders_table')
 
