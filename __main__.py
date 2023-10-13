@@ -2,7 +2,8 @@ from dotenv import load_dotenv
 import logging
 import os
 
-from config import ColumnEntries
+from config import ColumnEntries, date_times_config, order_config, product_config, store_config, card_config, \
+    user_config
 from data_cleaning import DataCleaning
 from data_extraction import DataExtractor
 from database_utils import DatabaseConnector
@@ -34,21 +35,30 @@ def process_date_times_data(target_db, target_engine):
     cleaner = DataCleaning(column_entries=ColumnEntries(column_name='month', entries=DataCleaning.valid_months))
 
     df_date_times = extractor.extract_from_s3(s3_address=DATE_TIMES_S3_ADDRESS)
+    print(f"Date time rows extracted: {len(df_date_times.index)}")
+    assert len(df_date_times.index) == date_times_config.extracted_count
+
     df_date_times = cleaner.clean_date_times_data(df=df_date_times)
-    # assert len(df_date_times.index) == 1846
-    # target_db.upload_to_db(target_engine, df=df_date_times, table_name='dim_date_times')
+    print(f"Date time rows after cleaning: {len(df_date_times.index)}")
+    assert len(df_date_times.index) == date_times_config.clean_count
+
+    target_db.upload_to_db(target_engine, df=df_date_times, table_name='dim_date_times')
 
 
-def process_order_data(source_db, source_engine, target_db, target_engine):
+def process_order_data(source_engine, target_db, target_engine):
     """Extract -> Clean -> Load Order data"""
     print(f"Processing Order Data")
     extractor, cleaner = DataExtractor(), DataCleaning()
 
     with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
-        extracted = extractor.read_rds_table(conn, 'orders_table')
+        df_orders = extractor.read_rds_table(conn, 'orders_table')
+    print(f"Order rows extracted: {len(df_orders.index)}")
+    assert len(df_orders.index) == order_config.extracted_count
 
-    df_orders = cleaner.clean_order_data(df=extracted)
-    assert len(df_orders.index) == 120123
+    df_orders = cleaner.clean_order_data(df=df_orders)
+    print(f"Order rows after cleaning: {len(df_orders.index)}")
+    assert len(df_orders.index) == order_config.clean_count
+
     target_db.upload_to_db(target_engine, df=df_orders, table_name='orders_table')
 
 
@@ -59,8 +69,13 @@ def process_product_data(target_db, target_engine):
     cleaner = DataCleaning(column_entries=ColumnEntries(column_name='category', entries=DataCleaning.valid_categories))
 
     df_products = extractor.extract_from_s3(s3_address=PRODUCTS_S3_ADDRESS)
+    print(f"product rows extracted: {len(df_products.index)}")
+    assert len(df_products.index) == product_config.extracted_count
+
     df_products = cleaner.clean_product_data(df=df_products)
-    assert len(df_products.index) == 1846
+    print(f"product rows after cleaning: {len(df_products.index)}")
+    assert len(df_products.index) == product_config.clean_count
+
     target_db.upload_to_db(target_engine, df=df_products, table_name='dim_products')
 
 
@@ -75,8 +90,12 @@ def process_store_data(target_db, target_engine):
     }
     num_stores = extractor.list_number_of_stores(url=NUMBER_STORES_ENDPOINT_URL, headers=headers)
     df_stores = extractor.retrieve_stores_data(url=STORE_ENDPOINT_URL, headers=headers, number_stores=num_stores)
+    print(f"Store rows extracted: {len(df_stores.index)}")
+    assert len(df_stores.index) == store_config.extracted_count
+
     df_stores = cleaner.clean_store_data(df=df_stores)
-    assert len(df_stores.index) == 441
+    print(f"Store rows after cleaning: {len(df_stores.index)}")
+    assert len(df_stores.index) == store_config.clean_count
     target_db.upload_to_db(target_engine, df=df_stores, table_name='dim_store_details')
 
 
@@ -90,8 +109,13 @@ def process_card_data(target_db, target_engine):
     )
 
     df_card_details = extractor.retrieve_pdf_data(pdf_path=CARD_DATA_PDF_PATH)
+    print(f"Card rows extracted: {len(df_card_details.index)}")
+    assert len(df_card_details.index) == card_config.extracted_count
+
     df_card_details = cleaner.clean_card_data(df=df_card_details)
-    assert len(df_card_details.index) == 15284
+    print(f"Card rows after cleaning: {len(df_card_details.index)}")
+    assert len(df_card_details.index) == card_config.clean_count
+
     target_db.upload_to_db(target_engine, df=df_card_details, table_name='dim_card_details')
 
 
@@ -101,12 +125,14 @@ def process_user_data(source_db, source_engine, target_db, target_engine):
     extractor, cleaner = DataExtractor(), DataCleaning()
 
     with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
-        # Uncomment below to list all database tables
         source_db.list_db_tables(source_engine)
-        extracted = extractor.read_rds_table(conn, 'legacy_users')
+        df_users = extractor.read_rds_table(conn, 'legacy_users')
+    print(f"User rows extracted: {len(df_users.index)}")
+    assert len(df_users.index) == user_config.extracted_count
 
-    df_users = cleaner.clean_user_data(df=extracted)
-    assert len(df_users.index) == 15284
+    df_users = cleaner.clean_user_data(df=df_users)
+    print(f"User rows after cleaning: {len(df_users.index)}")
+    assert len(df_users.index) == user_config.clean_count
     target_db.upload_to_db(target_engine, df=df_users, table_name='dim_users')
 
 
@@ -119,5 +145,5 @@ if __name__ == '__main__':
     process_card_data(tgt_db, tgt_engine)
     process_store_data(tgt_db, tgt_engine)
     process_product_data(tgt_db, tgt_engine)
-    process_order_data(src_db, src_engine, tgt_db, tgt_engine)
+    process_order_data(src_engine, tgt_db, tgt_engine)
     process_date_times_data(tgt_db, tgt_engine)
