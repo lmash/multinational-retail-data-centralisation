@@ -73,7 +73,7 @@ class DataExtractor:
                 raise
             return None
 
-        if local_path.suffix == 'csv':
+        if local_path.suffix == '.csv':
             df = pd.read_csv(local_path)
         else:
             df = pd.read_json(local_path)

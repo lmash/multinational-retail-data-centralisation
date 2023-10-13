@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import logging
 import os
 
+from config import ColumnEntries
 from data_cleaning import DataCleaning
 from data_extraction import DataExtractor
 from database_utils import DatabaseConnector
@@ -54,7 +55,8 @@ def process_order_data(source_db, source_engine, target_db, target_engine):
 def process_product_data(target_db, target_engine):
     """Extract -> Clean -> Load Product data"""
     print(f"Processing Product Data")
-    extractor, cleaner = DataExtractor(), DataCleaning()
+    extractor = DataExtractor()
+    cleaner = DataCleaning(column_entries=ColumnEntries(column_name='category', entries=DataCleaning.valid_categories))
 
     df_products = extractor.extract_from_s3(s3_address=PRODUCTS_S3_ADDRESS)
     df_products = cleaner.clean_product_data(df=df_products)
@@ -81,7 +83,11 @@ def process_store_data(target_db, target_engine):
 def process_card_data(target_db, target_engine):
     """Extract -> Clean -> Load Card data"""
     print(f"Processing Card Data")
-    extractor, cleaner = DataExtractor(), DataCleaning()
+    extractor = DataExtractor()
+    cleaner = DataCleaning(column_entries=ColumnEntries(
+        column_name='card_provider',
+        entries=DataCleaning.valid_card_providers)
+    )
 
     df_card_details = extractor.retrieve_pdf_data(pdf_path=CARD_DATA_PDF_PATH)
     df_card_details = cleaner.clean_card_data(df=df_card_details)
@@ -109,9 +115,9 @@ if __name__ == '__main__':
     src_db, src_engine = setup_database(filename='config/db_creds.yaml')
     tgt_db, tgt_engine = setup_database(filename='config/db_creds_target.yaml')
 
-    # process_user_data(src_db, src_engine, tgt_db, tgt_engine)
-    # process_card_data(tgt_db, tgt_engine)
-    # process_store_data(tgt_db, tgt_engine)
-    # process_product_data(tgt_db, tgt_engine)
-    # process_order_data(src_db, src_engine, tgt_db, tgt_engine)
-    process_date_times_data(tgt_db, tgt_engine)
+    process_user_data(src_db, src_engine, tgt_db, tgt_engine)
+    process_card_data(tgt_db, tgt_engine)
+    process_store_data(tgt_db, tgt_engine)
+    process_product_data(tgt_db, tgt_engine)
+    process_order_data(src_db, src_engine, tgt_db, tgt_engine)
+    # process_date_times_data(tgt_db, tgt_engine)

@@ -5,6 +5,8 @@ import re
 from time import strptime
 from typing import List
 
+from config import ColumnEntries
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,11 +15,18 @@ class DataCleaning:
                             'JCB 15 digit', 'Maestro', 'Mastercard', 'Discover',
                             'VISA 19 digit', 'VISA 16 digit', 'VISA 13 digit']
     months_with_leading_zero = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-    months = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+    valid_months = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     valid_categories = ['toys-and-games', 'sports-and-leisure', 'pets', 'homeware', 'health-and-beauty',
                         'food-and-drink', 'diy']
     OZ_TO_KG = 35.274
     G_TO_KG = 1000
+
+    def __init__(self, column_entries: ColumnEntries = None):
+        """
+        valid_or_drop is a Dictionary of column : [valid_values] entries in a column not in the list of
+        valid_values will result in the row being dropped
+        """
+        self.valid_entries = column_entries
 
     @staticmethod
     def _set_index_column_as_index(df) -> pd.DataFrame:
@@ -40,21 +49,6 @@ class DataCleaning:
 
         # Change type to optimize
         df['country_code'] = df['country_code'].astype('category')
-        return df
-
-    def _clean_category(self, df) -> pd.DataFrame:
-        """Drop rows where category not valid (identifies dodgy data). Optimize after dropping"""
-        logger.debug(f"Clean data in column category")
-        df.loc[
-            ~df['category'].isin(self.valid_categories),
-            'category'
-        ] = np.nan
-
-        self._log_number_of_rows_to_drop(df=df, subset=['category'])
-        df = df.dropna(subset=['category'])
-
-        # Change type to optimize
-        df['category'] = df['category'].astype('category')
         return df
 
     @staticmethod
@@ -159,15 +153,23 @@ class DataCleaning:
 
         return df
 
-    def _clean_card_provider(self, df) -> pd.DataFrame:
-        """Drop rows where card_provider not valid (identifies dodgy data)"""
-        logger.debug(f"Clean data in column card_provider")
+    def _drop_rows_with_invalid_entries(self, df, column: str, valid_entries: List) -> pd.DataFrame:
+        """
+        Drop rows where entries in column are not valid (Pattern identified so far across the data,
+        be very sure this is the case before using this!)
+        """
+        logger.debug(f"Clean data in column {column}")
         df.loc[
-            ~df['card_provider'].isin(DataCleaning.valid_card_providers),
-            'card_provider'
+            ~df[column].isin(valid_entries),
+            column
         ] = np.nan
-        self._log_number_of_rows_to_drop(df=df, subset=['card_provider'])
-        df = df.dropna(subset=['card_provider'])
+
+        self._log_number_of_rows_to_drop(df=df, subset=[column])
+        df = df.dropna(subset=[column])
+
+        # TODO do we need to create a category now?
+        # Change type to optimize
+        df[column] = df[column].astype('category')
         return df
 
     def _clean_card_number_expiry_date(self, df) -> pd.DataFrame:
@@ -320,7 +322,11 @@ class DataCleaning:
         and standardizes dates
         """
         logger.info(f"Clean card data")
-        df = self._clean_card_provider(df)
+        df = self._drop_rows_with_invalid_entries(
+            df=df,
+            column=self.valid_entries.column_name,
+            valid_entries=self.valid_entries.entries
+        )
         df = self._clean_date(df, 'date_payment_confirmed')
         df = self._clean_card_number_expiry_date(df)
         df.reset_index(inplace=True, drop=True)
@@ -350,7 +356,11 @@ class DataCleaning:
         logger.info(f"Clean product data")
         df = self._rename_product_columns(df)
         df = self._set_index_column_as_index(df)
-        df = self._clean_category(df)
+        df = self._drop_rows_with_invalid_entries(
+            df=df,
+            column=self.valid_entries.column_name,
+            valid_entries=self.valid_entries.entries
+        )
         df = self._clean_product_price(df)
         df = self._clean_date(df, 'date_added')
         df = self.convert_product_weights(df)
