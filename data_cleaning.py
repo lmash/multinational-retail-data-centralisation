@@ -11,14 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class DataCleaning:
-    valid_card_providers = ['Diners Club / Carte Blanche', 'American Express', 'JCB 16 digit',
-                            'JCB 15 digit', 'Maestro', 'Mastercard', 'Discover',
-                            'VISA 19 digit', 'VISA 16 digit', 'VISA 13 digit']
     months_with_leading_zero = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-    valid_months = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
-    valid_categories = ['toys-and-games', 'sports-and-leisure', 'pets', 'homeware', 'health-and-beauty',
-                        'food-and-drink', 'diy']
-    valid_country_codes = ['DE', 'GB', 'US']
 
     def __init__(self, column_entries: ColumnEntries = None):
         """

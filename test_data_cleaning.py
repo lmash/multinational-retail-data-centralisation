@@ -2,44 +2,32 @@ import pandas as pd
 import pytest
 import numpy as np
 
-from config import ColumnEntries
+from config import ColumnEntries, valid_months, valid_categories, valid_country_codes, valid_card_providers
 from data_cleaning import DataCleaning
 
 
 @pytest.fixture
 def user_cleaner():
     """Returns a DataCleaning instance for a User"""
-    return DataCleaning(column_entries=ColumnEntries(
-        column_name='country_code',
-        entries=DataCleaning.valid_country_codes)
-    )
+    return DataCleaning(column_entries=valid_country_codes)
 
 
 @pytest.fixture
 def card_cleaner():
     """Returns a DataCleaning instance for a Card"""
-    return DataCleaning(column_entries=ColumnEntries(
-        column_name='card_provider',
-        entries=DataCleaning.valid_card_providers)
-    )
+    return DataCleaning(column_entries=valid_card_providers)
 
 
 @pytest.fixture
 def product_cleaner():
     """Returns a DataCleaning instance for a Product"""
-    return DataCleaning(column_entries=ColumnEntries(
-        column_name='category',
-        entries=DataCleaning.valid_categories)
-    )
+    return DataCleaning(column_entries=valid_categories)
 
 
 @pytest.fixture
 def store_cleaner():
     """Returns a DataCleaning instance for a Store"""
-    return DataCleaning(column_entries=ColumnEntries(
-        column_name='country_code',
-        entries=DataCleaning.valid_country_codes)
-    )
+    return DataCleaning(column_entries=valid_country_codes)
 
 
 @pytest.fixture
@@ -51,7 +39,7 @@ def order_cleaner():
 @pytest.fixture
 def date_time_cleaner():
     """Returns a DataCleaning instance for a Store"""
-    return DataCleaning(column_entries=ColumnEntries(column_name='month', entries=DataCleaning.valid_months))
+    return DataCleaning(column_entries=valid_months)
 
 
 def test_date_of_birth_with_year_month_day(user_cleaner):
@@ -218,7 +206,7 @@ def test_clean_product_data_removes_rows_with_invalid_category(product_cleaner):
     ], columns=['index', 'product_name', 'product_price', 'weight', 'category', 'EAN', 'date_added', 'uuid',
                 'removed', 'product_code'])
     cleaned_df = product_cleaner.clean_product_data(df=df)
-    assert all(cleaned_df['category'].isin(product_cleaner.valid_categories)) is True
+    assert all(cleaned_df['category'].isin(valid_categories.entries)) is True
 
 
 def test_convert_product_weights_with_a_number_of_items(product_cleaner):

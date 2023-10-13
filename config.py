@@ -18,9 +18,46 @@ class ExtractCleanLoad:
     clean_count: int
 
 
+@dataclass
+class Endpoint:
+    card_data: str
+    number_of_stores: str
+    store_details: str
+    products: str
+    date_times: str
+
+
 user_config = ExtractCleanLoad(extracted_count=15320, clean_count=15284)
 card_config = ExtractCleanLoad(extracted_count=15309, clean_count=15284)
 store_config = ExtractCleanLoad(extracted_count=451, clean_count=441)
 product_config = ExtractCleanLoad(extracted_count=1853, clean_count=1846)
 order_config = ExtractCleanLoad(extracted_count=120123, clean_count=120123)
 date_times_config = ExtractCleanLoad(extracted_count=120161, clean_count=120123)
+
+valid_months = ColumnEntries(
+    column_name='month',
+    entries=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+)
+valid_categories = ColumnEntries(
+    column_name='category',
+    entries=['toys-and-games', 'sports-and-leisure', 'pets', 'homeware', 'health-and-beauty', 'food-and-drink', 'diy']
+)
+valid_country_codes = ColumnEntries(
+    column_name='country_code',
+    entries=['DE', 'GB', 'US']
+)
+valid_card_providers = ColumnEntries(
+    column_name='card_provider',
+    entries=[
+        'Diners Club / Carte Blanche', 'American Express', 'JCB 16 digit',
+        'JCB 15 digit', 'Maestro', 'Mastercard', 'Discover', 'VISA 19 digit',
+        'VISA 16 digit', 'VISA 13 digit']
+)
+
+endpoint = Endpoint(
+    card_data='https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf',
+    number_of_stores='https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores',
+    store_details='https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details/',
+    products='s3://data-handling-public/products.csv',
+    date_times='s3://data-handling-public/date_details.json'
+)
