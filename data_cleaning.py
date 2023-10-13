@@ -18,6 +18,7 @@ class DataCleaning:
     valid_months = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     valid_categories = ['toys-and-games', 'sports-and-leisure', 'pets', 'homeware', 'health-and-beauty',
                         'food-and-drink', 'diy']
+    valid_country_codes = ['DE', 'GB', 'US']
     OZ_TO_KG = 35.274
     G_TO_KG = 1000
 
@@ -35,29 +36,26 @@ class DataCleaning:
         df = df.set_index('index')
         return df.sort_index()
 
-    @staticmethod
-    def _clean_country_code(df) -> pd.DataFrame:
-        """Drop rows where country_code not valid (identifies dodgy data). Optimize after dropping"""
-        logger.debug(f"Validate country_code")
+    def _clean_country_code(self, df) -> pd.DataFrame:
+        """Drop rows where country_code not valid (identifies dodgy data)"""
+        logger.debug(f"Clean data in column country_code")
 
         # Update Country code GGB to GB (data typo)
         df.loc[df['country_code'] == 'GGB', 'country_code'] = 'GB'
 
-        number_rows = len(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
-        logger.debug(f"Dropping {number_rows} rows with invalid country_code")
-        df = df.drop(df[~df['country_code'].isin(['DE', 'GB', 'US'])].index)
-
-        # Change type to optimize
-        df['country_code'] = df['country_code'].astype('category')
+        df = self._drop_rows_with_invalid_entries(
+            df=df,
+            column=self.valid_entries.column_name,
+            valid_entries=self.valid_entries.entries
+        )
         return df
 
     @staticmethod
     def _clean_continent(df) -> pd.DataFrame:
-        """Fix continent data with typos """
+        """Fix continent data with typos"""
         logger.debug(f"Clean data in column continent")
         mapping_dictionary = {'eeEurope': 'Europe', 'Europe': 'Europe', 'eeAmerica': 'America', 'America': 'America'}
         df['continent'].replace(mapping_dictionary, inplace=True)
-        df['continent'] = df['continent'].astype('category')
         return df
 
     @staticmethod
@@ -202,13 +200,6 @@ class DataCleaning:
 
         return df
 
-    def _drop_missing_data(self, df) -> pd.DataFrame:
-        """NULLS have come through instead of nan - convert to nan and then delete as missing data"""
-        df.loc[df['last_name'] == 'NULL', 'last_name'] = np.nan
-        self._log_number_of_rows_to_drop(df=df, subset=['last_name'])
-        df = df.dropna(subset=['last_name'])
-        return df
-
     @staticmethod
     def _rename_product_columns(df) -> pd.DataFrame:
         df = df.rename(columns={'Unnamed: 0': 'index'})
@@ -304,14 +295,11 @@ class DataCleaning:
         """
         logger.info(f"Clean user data")
         df = self._set_index_column_as_index(df)
-        df = self._drop_missing_data(df)
         df = self._clean_country_code(df)
         df = self._clean_date(df, 'date_of_birth')
         df = self._clean_date(df, 'join_date')
         df = self._clean_address(df)
 
-        # Optimize to reduce memory
-        df['country'] = df['country'].astype('category')
         return df
 
     def clean_card_data(self, df: pd.DataFrame) -> pd.DataFrame:

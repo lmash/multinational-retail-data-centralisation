@@ -9,7 +9,10 @@ from data_cleaning import DataCleaning
 @pytest.fixture
 def user_cleaner():
     """Returns a DataCleaning instance for a User"""
-    return DataCleaning()
+    return DataCleaning(column_entries=ColumnEntries(
+        column_name='country_code',
+        entries=DataCleaning.valid_country_codes)
+    )
 
 
 @pytest.fixture
@@ -33,7 +36,10 @@ def product_cleaner():
 @pytest.fixture
 def store_cleaner():
     """Returns a DataCleaning instance for a Store"""
-    return DataCleaning()
+    return DataCleaning(column_entries=ColumnEntries(
+        column_name='country_code',
+        entries=DataCleaning.valid_country_codes)
+    )
 
 
 @pytest.fixture

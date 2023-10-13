@@ -82,7 +82,11 @@ def process_product_data(target_db, target_engine):
 def process_store_data(target_db, target_engine):
     """Extract -> Clean -> Load Store data"""
     print(f"Processing Store Data")
-    extractor, cleaner = DataExtractor(), DataCleaning()
+    extractor = DataExtractor()
+    cleaner = DataCleaning(column_entries=ColumnEntries(
+        column_name='country_code',
+        entries=DataCleaning.valid_country_codes)
+    )
 
     headers = {
         "Content-Type": "application/json",
@@ -122,7 +126,11 @@ def process_card_data(target_db, target_engine):
 def process_user_data(source_db, source_engine, target_db, target_engine):
     """Extract -> Clean -> Load User data"""
     print(f"Processing User Data")
-    extractor, cleaner = DataExtractor(), DataCleaning()
+    extractor = DataExtractor()
+    cleaner = DataCleaning(column_entries=ColumnEntries(
+        column_name='country_code',
+        entries=DataCleaning.valid_country_codes)
+    )
 
     with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
         source_db.list_db_tables(source_engine)
@@ -142,8 +150,8 @@ if __name__ == '__main__':
     tgt_db, tgt_engine = setup_database(filename='config/db_creds_target.yaml')
 
     process_user_data(src_db, src_engine, tgt_db, tgt_engine)
-    process_card_data(tgt_db, tgt_engine)
-    process_store_data(tgt_db, tgt_engine)
-    process_product_data(tgt_db, tgt_engine)
-    process_order_data(src_engine, tgt_db, tgt_engine)
-    process_date_times_data(tgt_db, tgt_engine)
+    # process_card_data(tgt_db, tgt_engine)
+    # process_store_data(tgt_db, tgt_engine)
+    # process_product_data(tgt_db, tgt_engine)
+    # process_order_data(src_engine, tgt_db, tgt_engine)
+    # process_date_times_data(tgt_db, tgt_engine)
