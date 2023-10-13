@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from typing import List
 
+OZ_TO_KG = 35.274
+G_TO_KG = 1000
+M_TO_KG = .001
+
 
 @dataclass
 class ColumnEntries:

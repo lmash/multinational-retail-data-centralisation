@@ -5,7 +5,7 @@ import re
 from time import strptime
 from typing import List
 
-from config import ColumnEntries
+from config import ColumnEntries, OZ_TO_KG, G_TO_KG
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +19,6 @@ class DataCleaning:
     valid_categories = ['toys-and-games', 'sports-and-leisure', 'pets', 'homeware', 'health-and-beauty',
                         'food-and-drink', 'diy']
     valid_country_codes = ['DE', 'GB', 'US']
-    OZ_TO_KG = 35.274
-    G_TO_KG = 1000
 
     def __init__(self, column_entries: ColumnEntries = None):
         """
@@ -75,8 +73,8 @@ class DataCleaning:
         address = row['address']
         columns = ['address', 'address_2', 'address_3', 'address_4']
 
-        # card addresses have the locality at the end
-        if 'card_number' in row:
+        # store addresses have the locality at the end
+        if 'store_code' in row:
             locality_removed = address.split(',')[:-1]
             address = "".join(locality_removed)
         address_lines = address.split('\n')
@@ -205,58 +203,55 @@ class DataCleaning:
         df = df.rename(columns={'Unnamed: 0': 'index'})
         return df
 
-    def _calculate_total_weight(self, weight: str) -> str:
+    @staticmethod
+    def _calculate_total_weight(weight: str) -> str:
         """Accepts a weight of a number of items e.g. 2 x 200g Returns total weight in Kg"""
         number_items = weight.split(' ')
         item_weight = number_items[-1]
         total_weight = int(number_items[0]) * int(item_weight.rstrip('g'))
-        return f"{total_weight/self.G_TO_KG}"
+        return f"{total_weight / G_TO_KG}"
 
-    def _convert_weight_from_oz_to_kg(self, weight: str) -> str:
+    @staticmethod
+    def _convert_weight_from_oz_to_kg(weight: str) -> str:
         """Accepts a weight in oz e.g. 200oz Returns weight in Kg rounded to 3dp"""
         weight_in_oz = int(weight.rstrip('oz'))
-        return f"{round(weight_in_oz / self.OZ_TO_KG, 3)}"
+        return f"{round(weight_in_oz / OZ_TO_KG, 3)}"
 
-    def _convert_weight_from_g_to_kg(self, weight: str) -> str:
-        """Accepts a weight in g e.g. 200g Returns weight in Kg"""
-        weight_in_g = float(weight.rstrip('g'))
-        return f"{weight_in_g/self.G_TO_KG}"
+    @staticmethod
+    def _convert_weight_from_g_or_ml_to_kg(weight: str) -> str:
+        """Accepts a weight in g e.g. 200g/200ml Returns weight in Kg"""
+        weight_g = float(re.sub(r'g|ml', '', weight))
+        return f"{weight_g / G_TO_KG}"
+
+    def _determine_weight_function(self, weight):
+        """Routes to the appropriate function based on the contents of the weight string"""
+        if 'x' in weight:
+            return self._calculate_total_weight(weight)
+        elif 'oz' in weight:
+            return self._convert_weight_from_oz_to_kg(weight)
+        elif 'kg' in weight:
+            return float(weight.replace('kg', ''))
+
+        return self._convert_weight_from_g_or_ml_to_kg(weight)
 
     def convert_product_weights(self, df) -> pd.DataFrame:
         """
-        Converts a mixture of weight data to kg in float
-        Order of conversion must be maintained
+        Converts a mixture of weight data to kg in float by first removing disallowed characters.
+        The remaining data can be any of the following
           - Weights with multiple items e.g. 2 x 200g converted to 0.4
-          - Weights with ml as converted 1:1 to g (to be updated to kg after)
+          - Weights with ml as converted 1:1 to g (converted directly to kg)
           - Weights with kg suffix remove the suffix
           - Weights with oz converted to kg
-          - Weights with invalid characters cleaned up
           - Weights with g converted to kg
         """
-        logger.debug(f"Clean data in column weight")
-        df_total_weight = df[df['weight'].str.contains('x')].copy()
-        df_total_weight['weight'] = df_total_weight['weight'].apply(self._calculate_total_weight)
-        df.update(df_total_weight)
-
-        df_weight_in_ml = df[df['weight'].str.contains('ml')].copy()
-        df_weight_in_ml['weight'] = df_weight_in_ml['weight'].str.replace('ml', 'g')
-        df.update(df_weight_in_ml)
-
-        df_weight_in_kg = df[df['weight'].str.contains('kg')].copy()
-        df_weight_in_kg['weight'] = df_weight_in_kg['weight'].str.replace('kg', '')
-        df.update(df_weight_in_kg)
-
-        df_weight_in_oz = df[df['weight'].str.contains('oz')].copy()
-        df_weight_in_oz['weight'] = df_weight_in_oz['weight'].apply(self._convert_weight_from_oz_to_kg)
-        df.update(df_weight_in_oz)
-
+        logger.info(f"Clean data in column weight")
         df_invalid_chars = df[df['weight'].str.endswith(' .')].copy()
         df_invalid_chars['weight'] = df_invalid_chars['weight'].str.replace(' .', '')
         df.update(df_invalid_chars)
 
-        df_weight_in_g = df[df['weight'].str.contains('g')].copy()
-        df_weight_in_g['weight'] = df_weight_in_g['weight'].apply(self._convert_weight_from_g_to_kg)
-        df.update(df_weight_in_g)
+        df_rest = df.copy()
+        df_rest['weight'] = df_rest['weight'].apply(self._determine_weight_function)
+        df.update(df_rest)
 
         df['weight'] = df['weight'].astype('float')
         return df
@@ -265,12 +260,9 @@ class DataCleaning:
     def _clean_product_price(df):
         """This function cleans product price by removing the £ character and converting to float"""
         logger.debug(f"Clean data in column product_price")
-        df.loc[
-            df['product_price'].str.contains('£'),
-            'product_price'] = df.loc[
-            df['product_price'].str.contains('£'),
-            'product_price'].str.replace('£', '')
+        price_mask = df['product_price'].str.contains('£')
 
+        df.loc[price_mask, 'product_price'] = df.loc[price_mask, 'product_price'].str.replace('£', '')
         df['product_price'] = df['product_price'].astype('float')
         return df
 
@@ -299,7 +291,6 @@ class DataCleaning:
         df = self._clean_date(df, 'date_of_birth')
         df = self._clean_date(df, 'join_date')
         df = self._clean_address(df)
-
         return df
 
     def clean_card_data(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -350,9 +341,6 @@ class DataCleaning:
         df = self._clean_product_price(df)
         df = self._clean_date(df, 'date_added')
         df = self.convert_product_weights(df)
-
-        # Optimize to reduce memory
-        df['removed'] = df['removed'].astype('category')
         return df
 
     def clean_order_data(self, df) -> pd.DataFrame:

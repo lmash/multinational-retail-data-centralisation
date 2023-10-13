@@ -149,9 +149,9 @@ if __name__ == '__main__':
     src_db, src_engine = setup_database(filename='config/db_creds.yaml')
     tgt_db, tgt_engine = setup_database(filename='config/db_creds_target.yaml')
 
-    process_user_data(src_db, src_engine, tgt_db, tgt_engine)
+    # process_user_data(src_db, src_engine, tgt_db, tgt_engine)
     # process_card_data(tgt_db, tgt_engine)
     # process_store_data(tgt_db, tgt_engine)
-    # process_product_data(tgt_db, tgt_engine)
+    process_product_data(tgt_db, tgt_engine)
     # process_order_data(src_engine, tgt_db, tgt_engine)
     # process_date_times_data(tgt_db, tgt_engine)

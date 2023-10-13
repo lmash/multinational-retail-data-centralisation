@@ -190,6 +190,19 @@ def test_typos_removed_from_store_data(store_cleaner):
     assert cleaned_df['continent'][0] == 'Europe'
 
 
+def test_store_data_address_removes_locality(store_cleaner):
+    df = pd.DataFrame(data=[
+        {'index': '0',
+         'address': 'Flat 72W\nSally isle\nEast Deantown\nE7B 8EB, High Wycombe',
+         'store_code': 'HI-9B97EE4E'
+         }])
+    cleaned_df = store_cleaner._clean_address(df=df)
+    assert cleaned_df['address'][0] == 'Flat 72W'
+    assert cleaned_df['address_2'][0] == 'Sally isle'
+    assert cleaned_df['address_3'][0] == 'East Deantown'
+    assert cleaned_df['address_4'][0] == 'E7B 8EB'
+
+
 def test_clean_product_data_removes_rows_with_invalid_category(product_cleaner):
     """Test function clean_product_data removes rows where the category not valid"""
     row_with_invalid_category = ['1']
