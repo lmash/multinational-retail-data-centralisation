@@ -12,16 +12,17 @@ class DataCleaning:
     valid_card_providers = ['Diners Club / Carte Blanche', 'American Express', 'JCB 16 digit',
                             'JCB 15 digit', 'Maestro', 'Mastercard', 'Discover',
                             'VISA 19 digit', 'VISA 16 digit', 'VISA 13 digit']
-    months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    months_with_leading_zero = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    months = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     valid_categories = ['toys-and-games', 'sports-and-leisure', 'pets', 'homeware', 'health-and-beauty',
                         'food-and-drink', 'diy']
-    KG_TO_OZ = 35.274
-    KG_TO_G = 1000
+    OZ_TO_KG = 35.274
+    G_TO_KG = 1000
 
     @staticmethod
     def _set_index_column_as_index(df) -> pd.DataFrame:
         """Set the index and sort"""
-        df['index'] = df['index'].astype(np.int16)
+        df['index'] = df['index'].astype(np.int32)
         df = df.set_index('index')
         return df.sort_index()
 
@@ -97,13 +98,12 @@ class DataCleaning:
 
         for line, column in zip(address_lines, columns):
             row[column] = line
-            logger.debug(f"{column} set to {line}")
 
         return row
 
     def _clean_address(self, df) -> pd.DataFrame:
         """Add columns address_2, address_3, address_4 and update cleaned address"""
-        logger.debug(f"Clean data in column address")
+        # logger.debug(f"Clean data in column address")
         df['address_2'] = np.nan
         df['address_3'] = np.nan
         df['address_4'] = np.nan
@@ -143,7 +143,7 @@ class DataCleaning:
 
         # Add month column to identify dates to clean
         df['month'] = df[column_name].str.slice(5, 7)
-        month_valid_mask = ~df['month'].isin(self.months)
+        month_valid_mask = ~df['month'].isin(self.months_with_leading_zero)
         df.loc[
             month_valid_mask,
             column_name
@@ -182,6 +182,7 @@ class DataCleaning:
 
         # Drop columns 'card_number expiry_date' and 'Unnamed'
         df = df.drop(axis=1, columns=['card_number expiry_date', 'Unnamed: 0'])
+        df['card_number'] = df['card_number'].astype(int)
         return df
 
     @staticmethod
@@ -225,17 +226,17 @@ class DataCleaning:
         number_items = weight.split(' ')
         item_weight = number_items[-1]
         total_weight = int(number_items[0]) * int(item_weight.rstrip('g'))
-        return f"{total_weight/self.KG_TO_G}"
+        return f"{total_weight/self.G_TO_KG}"
 
     def _convert_weight_from_oz_to_kg(self, weight: str) -> str:
         """Accepts a weight in oz e.g. 200oz Returns weight in Kg rounded to 3dp"""
         weight_in_oz = int(weight.rstrip('oz'))
-        return f"{round(weight_in_oz/self.KG_TO_OZ, 3)}"
+        return f"{round(weight_in_oz / self.OZ_TO_KG, 3)}"
 
     def _convert_weight_from_g_to_kg(self, weight: str) -> str:
         """Accepts a weight in g e.g. 200g Returns weight in Kg"""
         weight_in_g = float(weight.rstrip('g'))
-        return f"{weight_in_g/self.KG_TO_G}"
+        return f"{weight_in_g/self.G_TO_KG}"
 
     def convert_product_weights(self, df) -> pd.DataFrame:
         """
@@ -287,6 +288,13 @@ class DataCleaning:
             'product_price'].str.replace('£', '')
 
         df['product_price'] = df['product_price'].astype('float')
+        return df
+
+    @staticmethod
+    def _drop_orders_columns(df) -> pd.DataFrame:
+        """Drop orders columns first_name, last_name, 1"""
+        logger.debug(f"Drop orders columns first_name, last_name, 1")
+        df = df.drop(['first_name', 'last_name', '1', 'level_0'], axis=1)
         return df
 
     def clean_user_data(self, df):
@@ -351,3 +359,12 @@ class DataCleaning:
         df['removed'] = df['removed'].astype('category')
         return df
 
+    def clean_orders_data(self, df) -> pd.DataFrame:
+        """
+        This function cleans the orders data. It removes rows with null and bad data,
+        resolves errors with dates and incorrectly typed values.
+        """
+        logger.info(f"Clean orders data")
+        df = self._drop_orders_columns(df)
+        df = self._set_index_column_as_index(df)
+        return df

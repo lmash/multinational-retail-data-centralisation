@@ -133,7 +133,7 @@ def test_question_marks_removed_from_card_number():
                 'card_number expiry_date', 'Unnamed: 0'])
     cleaning = DataCleaning()
     cleaned_df = cleaning.clean_card_data(df=df)
-    assert cleaned_df['card_number'][0] == '30060773296198'
+    assert cleaned_df['card_number'][0] == 30060773296198
 
 
 def test_typos_removed_from_store_data():

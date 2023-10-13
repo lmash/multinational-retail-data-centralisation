@@ -15,7 +15,9 @@ CARD_DATA_PDF_PATH = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/ca
 API_KEY = os.getenv('x-api-key')
 NUMBER_STORES_ENDPOINT_URL = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores'
 STORE_ENDPOINT_URL = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details/'
-S3_ADDRESS = 's3://data-handling-public/products.csv'
+PRODUCTS_S3_ADDRESS = 's3://data-handling-public/products.csv'
+# DATE_TIMES_S3_ADDRESS = ' https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json'
+DATE_TIMES_S3_ADDRESS = ' s3://data-handling-public/date_details.json'
 
 
 def setup_database(filename):
@@ -25,12 +27,36 @@ def setup_database(filename):
     return db_conn, engine
 
 
+def process_date_times_data(target_db, target_engine):
+    """Extract -> Clean -> Load Product data"""
+    print(f"Processing Date & Times Data")
+    extractor, cleaner = DataExtractor(), DataCleaning()
+
+    df_date_times = extractor.extract_from_s3(s3_address=DATE_TIMES_S3_ADDRESS)
+    # df_date_times = cleaner.clean_product_data(df=df_date_times)
+    # assert len(df_date_times.index) == 1846
+    # target_db.upload_to_db(target_engine, df=df_date_times, table_name='dim_date_times')
+
+
+def process_order_data(source_db, source_engine, target_db, target_engine):
+    """Extract -> Clean -> Load Order data"""
+    print(f"Processing Order Data")
+    extractor, cleaner = DataExtractor(), DataCleaning()
+
+    with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
+        extracted = extractor.read_rds_table(conn, 'orders_table')
+
+    df_orders = cleaner.clean_orders_data(df=extracted)
+    assert len(df_orders.index) == 120123
+    target_db.upload_to_db(target_engine, df=df_orders, table_name='orders_table')
+
+
 def process_product_data(target_db, target_engine):
     """Extract -> Clean -> Load Product data"""
     print(f"Processing Product Data")
     extractor, cleaner = DataExtractor(), DataCleaning()
 
-    df_products = extractor.extract_from_s3(s3_address=S3_ADDRESS)
+    df_products = extractor.extract_from_s3(s3_address=PRODUCTS_S3_ADDRESS)
     df_products = cleaner.clean_product_data(df=df_products)
     assert len(df_products.index) == 1846
     target_db.upload_to_db(target_engine, df=df_products, table_name='dim_products')
@@ -70,7 +96,7 @@ def process_user_data(source_db, source_engine, target_db, target_engine):
 
     with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
         # Uncomment below to list all database tables
-        # source_db.list_db_tables(source_engine)
+        source_db.list_db_tables(source_engine)
         extracted = extractor.read_rds_table(conn, 'legacy_users')
 
     df_users = cleaner.clean_user_data(df=extracted)
@@ -83,8 +109,9 @@ if __name__ == '__main__':
     src_db, src_engine = setup_database(filename='config/db_creds.yaml')
     tgt_db, tgt_engine = setup_database(filename='config/db_creds_target.yaml')
 
-    process_user_data(src_db, src_engine, tgt_db, tgt_engine)
-    process_card_data(tgt_db, tgt_engine)
-    process_store_data(tgt_db, tgt_engine)
-    process_product_data(tgt_db, tgt_engine)
-
+    # process_user_data(src_db, src_engine, tgt_db, tgt_engine)
+    # process_card_data(tgt_db, tgt_engine)
+    # process_store_data(tgt_db, tgt_engine)
+    # process_product_data(tgt_db, tgt_engine)
+    # process_order_data(src_db, src_engine, tgt_db, tgt_engine)
+    process_date_times_data(tgt_db, tgt_engine)
