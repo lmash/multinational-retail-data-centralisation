@@ -25,7 +25,7 @@ def setup_database(filename):
 
 def process_date_times_data(target_db, target_engine):
     """Extract -> Clean -> Load Product data"""
-    print(f"Processing Date & Times Data")
+    print("Processing Date & Times Data")
     extractor = DataExtractor()
     cleaner = DataCleaning(column_entries=valid_months)
 
@@ -42,7 +42,7 @@ def process_date_times_data(target_db, target_engine):
 
 def process_order_data(source_engine, target_db, target_engine):
     """Extract -> Clean -> Load Order data"""
-    print(f"Processing Order Data")
+    print("Processing Order Data")
     extractor, cleaner = DataExtractor(), DataCleaning()
 
     with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
@@ -59,7 +59,7 @@ def process_order_data(source_engine, target_db, target_engine):
 
 def process_product_data(target_db, target_engine):
     """Extract -> Clean -> Load Product data"""
-    print(f"Processing Product Data")
+    print("Processing Product Data")
     extractor = DataExtractor()
     cleaner = DataCleaning(column_entries=valid_categories)
 
@@ -76,7 +76,7 @@ def process_product_data(target_db, target_engine):
 
 def process_store_data(target_db, target_engine):
     """Extract -> Clean -> Load Store data"""
-    print(f"Processing Store Data")
+    print("Processing Store Data")
     extractor = DataExtractor()
     cleaner = DataCleaning(column_entries=valid_country_codes)
 
@@ -97,7 +97,7 @@ def process_store_data(target_db, target_engine):
 
 def process_card_data(target_db, target_engine):
     """Extract -> Clean -> Load Card data"""
-    print(f"Processing Card Data")
+    print("Processing Card Data")
     extractor = DataExtractor()
     cleaner = DataCleaning(column_entries=valid_card_providers)
 
@@ -114,7 +114,7 @@ def process_card_data(target_db, target_engine):
 
 def process_user_data(source_db, source_engine, target_db, target_engine):
     """Extract -> Clean -> Load User data"""
-    print(f"Processing User Data")
+    print("Processing User Data")
     extractor = DataExtractor()
     cleaner = DataCleaning(column_entries=valid_country_codes)
 

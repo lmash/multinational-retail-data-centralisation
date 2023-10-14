@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 import numpy as np
 
-from config import ColumnEntries, valid_months, valid_categories, valid_country_codes, valid_card_providers
+from config import valid_months, valid_categories, valid_country_codes, valid_card_providers
 from data_cleaning import DataCleaning
 
 

@@ -1,9 +1,24 @@
 # Multinational Retail Data Centralisation
 T.B.C.
-This is an implementation of the Hangman game, where the computer thinks of a word and the user tries to guess it.
+Help a multinational company utilize their data better. This project creates a central location for the sales data of the company. 
+The data is currently spread across multiple sources in varying formats. The project collects, 
+cleans and loads the data into a single database which can then be analysed.
+
+### Table of Contents
+T.B.C.
+
+### Project description
+T.B.C.
+A description of the project: what it does, the aim of the project, and what you learned
+  - The power of using pandas and notebooks for investigation, and then with each problem solved encompassing the solution into it's own function.
+  - Use dataframe masks more, they increase code readability.
+  - How to diagnose and resolve SettingWithCopy issues.
+  - Adding test coverage was invaluable! Cannot refactor code without them.
+  - Patterns emerge after doing the same task a few times, efficiencies can then be found.
+  - Reading in pdf's to pandas results in duplicate indexes being created
+  - Requests issues are tricky to debug
 
 ### Installation
-
 Pre-requisite: Conda/miniconda installed
 
 1. Clone the repo
@@ -63,13 +78,14 @@ Non-Python files:
 
 Python modules:
 
-| filename              | description                          |
-|-----------------------|--------------------------------------|
-| __main__.py           | Run the pipeline                     |
-| data_cleaning.py      | t.b.c.                               |
-| data_extraction.py    | t.b.c.                               |
-| database_utils.py     | t.b.c.                               |
-| test_data_cleaning.py | Unit tests for data cleaning module  |
+| filename              | description                         |
+|-----------------------|-------------------------------------|
+| __main__.py           | Run the pipeline                    |
+| config.py             | t.b.c.                              |
+| data_cleaning.py      | t.b.c.                              |
+| data_extraction.py    | t.b.c.                              |
+| database_utils.py     | t.b.c.                              |
+| test_data_cleaning.py | Unit tests for data cleaning module |
 
 ### Run tests
 
