@@ -315,7 +315,6 @@ class DataCleaning:
         df = self._clean_continent(df)
         df = self._clean_date(df, 'opening_date')
         df = self._clean_staff_numbers(df)
-        df = self._drop_columns(df, columns=['lat'])
         df = self._clean_address(df)
         return df
 
