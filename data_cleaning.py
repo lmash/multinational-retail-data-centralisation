@@ -58,6 +58,18 @@ class DataCleaning:
         return df
 
     @staticmethod
+    def _update_store_web_details(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        The web store doesn't have a physical address. Update all address related fields to nan
+        """
+        df.loc[
+            df['store_type'] == 'Web Portal',
+            ['address', 'longitude', 'latitude', 'lat', 'locality']
+        ] = np.nan
+
+        return df
+
+    @staticmethod
     def _update_address(row: pd.Series):
         """
         Remove locality, which is after the comma. Split by line end
@@ -316,6 +328,7 @@ class DataCleaning:
         df = self._clean_date(df, 'opening_date')
         df = self._clean_staff_numbers(df)
         df = self._clean_address(df)
+        df = self._update_store_web_details(df)
         return df
 
     def clean_product_data(self, df: pd.DataFrame) -> pd.DataFrame:

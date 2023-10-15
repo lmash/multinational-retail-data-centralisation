@@ -172,7 +172,8 @@ def test_typos_removed_from_store_data(store_cleaner):
          'opening_date': '2015-11-25',
          'staff_numbers': '7',
          'lat': np.nan,
-         'address': '4 High Street\nLondon, Greater London'
+         'address': '4 High Street\nLondon, Greater London',
+         'store_type': np.nan,
          }])
     cleaned_df = store_cleaner.clean_store_data(df=df)
     assert cleaned_df['continent'][0] == 'Europe'
