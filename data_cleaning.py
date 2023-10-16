@@ -177,7 +177,6 @@ class DataCleaning:
 
         # Drop columns 'card_number expiry_date' and 'Unnamed'
         df = df.drop(axis=1, columns=['card_number expiry_date', 'Unnamed: 0'])
-        df['card_number'] = df['card_number'].astype(int)
         return df
 
     @staticmethod
@@ -261,13 +260,6 @@ class DataCleaning:
         df.update(df_rest)
 
         df['weight'] = df['weight'].astype('float')
-        return df
-
-    @staticmethod
-    def _add_date_column(df: pd.DataFrame) -> pd.DataFrame:
-        """Add a date column by concatenating year, month, day and timestamp"""
-        df['date'] = df['year'] + '-' + df['month'] + '-' + df['day'] + ' ' + df['timestamp']
-        df['date'] = pd.to_datetime(df['date'])
         return df
 
     @staticmethod
@@ -360,5 +352,4 @@ class DataCleaning:
             column=self.valid_entries.column_name,
             valid_entries=self.valid_entries.entries
         )
-        df = self._add_date_column(df)
         return df

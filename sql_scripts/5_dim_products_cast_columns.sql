@@ -23,6 +23,6 @@ RENAME removed TO still_available;
 ALTER TABLE dim_products
 ALTER COLUMN still_available TYPE BOOLEAN USING 
     CASE
-	    WHEN still_available = 'Still_avaliable' THEN TRUE
-		ELSE FALSE
+	    WHEN still_available = 'Removed' THEN FALSE
+		ELSE TRUE
 	END;
