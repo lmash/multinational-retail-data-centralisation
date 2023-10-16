@@ -264,16 +264,6 @@ class DataCleaning:
         return df
 
     @staticmethod
-    def _clean_product_price(df: pd.DataFrame) -> pd.DataFrame:
-        """This function cleans product price by removing the £ character and converting to float"""
-        logger.debug("Clean data in column product_price")
-        price_mask = df['product_price'].str.contains('£')
-
-        df.loc[price_mask, 'product_price'] = df.loc[price_mask, 'product_price'].str.replace('£', '')
-        df['product_price'] = df['product_price'].astype('float')
-        return df
-
-    @staticmethod
     def _add_date_column(df: pd.DataFrame) -> pd.DataFrame:
         """Add a date column by concatenating year, month, day and timestamp"""
         df['date'] = df['year'] + '-' + df['month'] + '-' + df['day'] + ' ' + df['timestamp']
@@ -345,7 +335,6 @@ class DataCleaning:
             column=self.valid_entries.column_name,
             valid_entries=self.valid_entries.entries
         )
-        df = self._clean_product_price(df)
         df = self._clean_date(df, 'date_added')
         df = self.convert_product_weights(df)
         return df

@@ -270,16 +270,6 @@ def test_convert_product_weights_with_g(product_cleaner):
     assert cleaned_df['weight'][0] == 0.0116
 
 
-def test_clean_product_price(product_cleaner):
-    """Weight in g converted to kg as a float"""
-    df = pd.DataFrame(data=[
-        {'index': '0',
-         'product_price': '£4.99'
-         }])
-    cleaned_df = product_cleaner._clean_product_price(df=df)
-    assert cleaned_df['product_price'][0] == 4.99
-
-
 def test_drop_columns(order_cleaner):
     """Columns are dropped"""
     df = pd.DataFrame(data=[
