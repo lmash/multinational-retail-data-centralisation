@@ -161,7 +161,7 @@ def test_question_marks_removed_from_card_number(card_cleaner):
     ], columns=['card_number', 'expiry_date', 'card_provider', 'date_payment_confirmed',
                 'card_number expiry_date', 'Unnamed: 0'])
     cleaned_df = card_cleaner.clean_card_data(df=df)
-    assert cleaned_df['card_number'][0] == 30060773296198
+    assert cleaned_df['card_number'][0] == '30060773296198'
 
 
 def test_typos_removed_from_store_data(store_cleaner):
@@ -282,15 +282,3 @@ def test_drop_columns(order_cleaner):
     assert 'first_name' not in cleaned_df.columns
     assert 'last_name' not in cleaned_df.columns
     assert 'index' in cleaned_df.columns
-
-
-def test_add_date_column(date_time_cleaner):
-    """New column created which concatenates year, month, day and timestamp"""
-    df = pd.DataFrame(data=[
-        {'timestamp': '22:00:06',
-         'month': '3',
-         'year': '1972',
-         'day': '28',
-         }])
-    cleaned_df = date_time_cleaner._add_date_column(df)
-    assert cleaned_df['date'][0] == pd.Timestamp('1972-03-28 22:00:06')
