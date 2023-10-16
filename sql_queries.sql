@@ -85,3 +85,50 @@ FROM
 	sales_per_store
 ORDER BY 
     sales_per_store.total_sales DESC;
+
+-- Task 6. Which month in each year produced the most sales
+SELECT ROUND(SUM(ord.product_quantity * prod.product_price)::numeric, 2) AS total_sales,
+       dt.year,
+	   dt.month
+FROM
+    orders_table ord
+INNER JOIN
+    dim_products prod ON ord.product_code = prod.product_code
+INNER JOIN
+    dim_date_times dt ON ord.date_uuid = dt.date_uuid
+GROUP BY
+    dt.year,
+	dt.month
+ORDER BY 
+    total_sales DESC
+LIMIT
+    10;
+
+-- Task 7. What is our staff headcount?
+SELECT SUM(staff_numbers) AS total_staff_numbers,
+       country_code
+FROM dim_store_details
+GROUP BY
+    country_code
+ORDER BY
+    total_staff_numbers DESC;
+
+-- Task 8. Which German store type is selling the most?
+SELECT ROUND(SUM(ord.product_quantity * prod.product_price)::numeric, 2) AS total_sales,
+       store_type,
+	   country_code
+FROM
+    orders_table ord
+INNER JOIN
+    dim_products prod ON ord.product_code = prod.product_code
+INNER JOIN
+    dim_store_details store ON ord.store_code = store.store_code
+GROUP BY
+    store_type,
+	country_code
+HAVING
+    country_code = 'DE'
+ORDER BY
+    total_sales;
+
+-- Task 9. How quickly is the company making sales?

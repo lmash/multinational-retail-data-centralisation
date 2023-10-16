@@ -263,6 +263,13 @@ class DataCleaning:
         return df
 
     @staticmethod
+    def _add_date_column(df: pd.DataFrame) -> pd.DataFrame:
+        """Add a date column by concatenating year, month, day and timestamp"""
+        df['date'] = df['year'] + '-' + df['month'] + '-' + df['day'] + ' ' + df['timestamp']
+        df['date'] = pd.to_datetime(df['date'])
+        return df
+
+    @staticmethod
     def _drop_columns(df: pd.DataFrame, columns: List):
         """Drop columns first_name, last_name, 1"""
         logger.debug(f"Drop columns {columns}")
@@ -352,4 +359,5 @@ class DataCleaning:
             column=self.valid_entries.column_name,
             valid_entries=self.valid_entries.entries
         )
+        df = self._add_date_column(df)
         return df
