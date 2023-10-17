@@ -12,9 +12,6 @@ logger = logging.getLogger(__name__)
 
 class DataExtractor:
 
-    def __init__(self):
-        self.downloads = 'downloads'
-
     @staticmethod
     def read_rds_table(connection, table_name: str) -> pd.DataFrame:
         """This function accepts an sql connection and table name and returns the table as a dataframe"""
@@ -68,7 +65,7 @@ class DataExtractor:
         """Download file from s3 bucket, returns contents as a dataframe"""
         bucket, key = self._parse_s3_url(s3_address)
         s3 = boto3.client('s3')
-        local_path = Path.cwd() / self.downloads / key
+        local_path = Path.cwd() / key
 
         try:
             s3.download_file(bucket, key, local_path)
