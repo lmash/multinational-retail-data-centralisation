@@ -11,20 +11,25 @@ logger = logging.getLogger(__name__)
 
 
 class DataExtractor:
+
     def __init__(self):
         self.downloads = 'downloads'
 
     @staticmethod
     def read_rds_table(connection, table_name: str) -> pd.DataFrame:
         """This function accepts an sql connection and table name and returns the table as a dataframe"""
-        logger.info(f"Read table {table_name} from host {connection.engine.url.host}")
+        logger.info(
+            f"Read table {table_name} from host {connection.engine.url.host}")
         return pd.read_sql_table(table_name=table_name, con=connection)
 
     @staticmethod
     def retrieve_pdf_data(pdf_path: str) -> pd.DataFrame:
         """This function accepts a path to a pdf, reads the pdf and returns the contents"""
         logger.info(f"Read pdf file from path {pdf_path}")
-        df = pd.DataFrame(columns=['card_number', 'expiry_date', 'card_provider', 'date_payment_confirmed'])
+        df = pd.DataFrame(columns=[
+            'card_number', 'expiry_date', 'card_provider',
+            'date_payment_confirmed'
+        ])
 
         cards = tabula.read_pdf(pdf_path, stream=True, pages="all")
         for card in cards:
@@ -40,7 +45,8 @@ class DataExtractor:
         return response.json()['number_stores']
 
     @staticmethod
-    def retrieve_stores_data(url: str, headers: Dict, number_stores: int) -> pd.DataFrame:
+    def retrieve_stores_data(url: str, headers: Dict,
+                             number_stores: int) -> pd.DataFrame:
         stores = []
 
         for number in range(number_stores):

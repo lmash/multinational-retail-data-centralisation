@@ -7,8 +7,13 @@ from data_cleaning import DataCleaning
 from data_extraction import DataExtractor
 from database_utils import DatabaseConnector
 
-logging.basicConfig(filename='pipeline.log', encoding='utf-8', level=logging.DEBUG,
-                    format="%(asctime)s [%(levelname)s] %(name)s - %(funcName).40s - %(message)s",)
+logging.basicConfig(
+    filename='pipeline.log',
+    encoding='utf-8',
+    level=logging.DEBUG,
+    format=
+    "%(asctime)s [%(levelname)s] %(name)s - %(funcName).40s - %(message)s",
+)
 logger = logging.getLogger(__name__)
 load_dotenv()
 
@@ -26,7 +31,8 @@ def process_date_times_data(target_db, target_engine, data_type: DataType):
 
     # Extract
     data_extractor = DataExtractor()
-    df_extracted = data_extractor.extract_from_s3(s3_address=endpoints.date_times)
+    df_extracted = data_extractor.extract_from_s3(
+        s3_address=endpoints.date_times)
     print(f"{data_type.name} rows extracted: {len(df_extracted.index)}")
     assert len(df_extracted.index) == data_type.extracted_count
 
@@ -38,16 +44,20 @@ def process_date_times_data(target_db, target_engine, data_type: DataType):
     assert len(df_cleaned.index) == data_type.clean_count
 
     # Load
-    target_db.upload_to_db(target_engine, df=df_cleaned, table_name=data_type.table_name)
+    target_db.upload_to_db(target_engine,
+                           df=df_cleaned,
+                           table_name=data_type.table_name)
 
 
-def process_order_data(source_engine, target_db, target_engine, data_type: DataType):
+def process_order_data(source_engine, target_db, target_engine,
+                       data_type: DataType):
     """Extract -> Clean -> Load Order data"""
     print(f"Processing {data_type.name} Data")
 
     # Extract
     data_extractor = DataExtractor()
-    with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
+    with source_engine.execution_options(
+            isolation_level='AUTOCOMMIT').connect() as conn:
         df_extracted = data_extractor.read_rds_table(conn, 'orders_table')
     print(f"{data_type.name} rows extracted: {len(df_extracted.index)}")
     assert len(df_extracted.index) == data_type.extracted_count
@@ -60,7 +70,9 @@ def process_order_data(source_engine, target_db, target_engine, data_type: DataT
     assert len(df_cleaned.index) == data_type.clean_count
 
     # Load
-    target_db.upload_to_db(target_engine, df=df_cleaned, table_name=data_type.table_name)
+    target_db.upload_to_db(target_engine,
+                           df=df_cleaned,
+                           table_name=data_type.table_name)
 
 
 def process_product_data(target_db, target_engine, data_type: DataType):
@@ -69,7 +81,8 @@ def process_product_data(target_db, target_engine, data_type: DataType):
 
     # Extract
     data_extractor = DataExtractor()
-    df_extracted = data_extractor.extract_from_s3(s3_address=endpoints.products)
+    df_extracted = data_extractor.extract_from_s3(
+        s3_address=endpoints.products)
     print(f"{data_type.name} rows extracted: {len(df_extracted.index)}")
     assert len(df_extracted.index) == data_type.extracted_count
 
@@ -81,7 +94,9 @@ def process_product_data(target_db, target_engine, data_type: DataType):
     assert len(df_cleaned.index) == data_type.clean_count
 
     # Load
-    target_db.upload_to_db(target_engine, df=df_cleaned, table_name=data_type.table_name)
+    target_db.upload_to_db(target_engine,
+                           df=df_cleaned,
+                           table_name=data_type.table_name)
 
 
 def process_store_data(target_db, target_engine, data_type: DataType):
@@ -94,7 +109,8 @@ def process_store_data(target_db, target_engine, data_type: DataType):
 
     # Extract
     data_extractor = DataExtractor()
-    num_stores = data_extractor.list_number_of_stores(url=endpoints.number_of_stores, headers=headers)
+    num_stores = data_extractor.list_number_of_stores(
+        url=endpoints.number_of_stores, headers=headers)
     df_extracted = data_extractor.retrieve_stores_data(
         url=endpoints.store_details, headers=headers, number_stores=num_stores)
     print(f"{data_type.name} rows extracted: {len(df_extracted.index)}")
@@ -108,7 +124,9 @@ def process_store_data(target_db, target_engine, data_type: DataType):
     assert len(df_cleaned.index) == data_type.clean_count
 
     # Load
-    target_db.upload_to_db(target_engine, df=df_cleaned, table_name=data_type.table_name)
+    target_db.upload_to_db(target_engine,
+                           df=df_cleaned,
+                           table_name=data_type.table_name)
 
 
 def process_card_data(target_db, target_engine, data_type: DataType):
@@ -117,7 +135,8 @@ def process_card_data(target_db, target_engine, data_type: DataType):
 
     # Extract
     data_extractor = DataExtractor()
-    df_extracted = data_extractor.retrieve_pdf_data(pdf_path=endpoints.card_data)
+    df_extracted = data_extractor.retrieve_pdf_data(
+        pdf_path=endpoints.card_data)
     print(f"{data_type.name} rows extracted: {len(df_extracted.index)}")
     assert len(df_extracted.index) == data_type.extracted_count
 
@@ -129,15 +148,19 @@ def process_card_data(target_db, target_engine, data_type: DataType):
     assert len(df_cleaned.index) == data_type.clean_count
 
     # Load
-    target_db.upload_to_db(target_engine, df=df_cleaned, table_name=data_type.table_name)
+    target_db.upload_to_db(target_engine,
+                           df=df_cleaned,
+                           table_name=data_type.table_name)
 
 
-def process_user_data(source_db, source_engine, target_db, target_engine, data_type: DataType):
+def process_user_data(source_db, source_engine, target_db, target_engine,
+                      data_type: DataType):
     """Extract from a postgres Database -> Clean -> Load User data"""
     print(f"Processing {data_type.name} Data")
 
     data_extractor = DataExtractor()
-    with source_engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
+    with source_engine.execution_options(
+            isolation_level='AUTOCOMMIT').connect() as conn:
         source_db.list_db_tables(source_engine)
         df_extracted = data_extractor.read_rds_table(conn, 'legacy_users')
     print(f"{data_type.name} rows extracted: {len(df_extracted.index)}")
@@ -149,11 +172,15 @@ def process_user_data(source_db, source_engine, target_db, target_engine, data_t
     print(f"{data_type.name} rows after cleaning: {len(df_cleaned.index)}")
     assert len(df_cleaned.index) == data_type.clean_count
 
-    target_db.upload_to_db(target_engine, df=df_cleaned, table_name=data_type.table_name)
+    target_db.upload_to_db(target_engine,
+                           df=df_cleaned,
+                           table_name=data_type.table_name)
 
 
 if __name__ == '__main__':
-    logger.info('****************************** Starting pipeline ******************************')
+    logger.info(
+        '****************************** Starting pipeline ******************************'
+    )
     src_db, src_engine = setup_database(filename='config/db_creds.yaml')
     tgt_db, tgt_engine = setup_database(filename='config/db_creds_target.yaml')
 

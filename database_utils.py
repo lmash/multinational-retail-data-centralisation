@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseConnector:
+
     def read_db_creds(self, filename: str) -> Dict:
         """This function accepts a filename (with a path) and returns the database credentials"""
         logger.info(f"Read database credentials from YAML file: {filename}")
@@ -18,8 +19,10 @@ class DatabaseConnector:
         """This function accepts database credentials and returns an SQL alchemy engine"""
         logger.info(f"Initialize db engine for: {credentials['RDS_HOST']}")
         db_type = "postgresql+psycopg2"
-        engine = create_engine(f"{db_type}://{credentials['RDS_USER']}:{credentials['RDS_PASSWORD']}"
-                               f"@{credentials['RDS_HOST']}:{credentials['RDS_PORT']}/{credentials['RDS_DATABASE']}")
+        engine = create_engine(
+            f"{db_type}://{credentials['RDS_USER']}:{credentials['RDS_PASSWORD']}"
+            f"@{credentials['RDS_HOST']}:{credentials['RDS_PORT']}/{credentials['RDS_DATABASE']}"
+        )
         return engine
 
     def list_db_tables(self, engine):

@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class DataCleaning:
-    months_with_leading_zero = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    months_with_leading_zero = [
+        '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'
+    ]
 
     def __init__(self, column_entries: ColumnEntries = None):
         """
@@ -37,15 +39,19 @@ class DataCleaning:
         df = self._drop_rows_with_invalid_entries(
             df=df,
             column=self.valid_entries.column_name,
-            valid_entries=self.valid_entries.entries
-        )
+            valid_entries=self.valid_entries.entries)
         return df
 
     @staticmethod
     def _clean_continent(df: pd.DataFrame) -> pd.DataFrame:
         """Fix continent data with typos"""
         logger.debug("Clean data in column continent")
-        mapping_dictionary = {'eeEurope': 'Europe', 'Europe': 'Europe', 'eeAmerica': 'America', 'America': 'America'}
+        mapping_dictionary = {
+            'eeEurope': 'Europe',
+            'Europe': 'Europe',
+            'eeAmerica': 'America',
+            'America': 'America'
+        }
         df['continent'].replace(mapping_dictionary, inplace=True)
         return df
 
@@ -53,7 +59,8 @@ class DataCleaning:
     def _clean_staff_numbers(df: pd.DataFrame) -> pd.DataFrame:
         """Fix staff numbers with non numbers """
         logger.debug("Clean data in column staff_numbers")
-        df['staff_numbers'] = df['staff_numbers'].apply(lambda x: re.sub("[^0-9]", "", x))
+        df['staff_numbers'] = df['staff_numbers'].apply(
+            lambda x: re.sub("[^0-9]", "", x))
         df['staff_numbers'] = df['staff_numbers'].astype(np.uint16)
         return df
 
@@ -64,8 +71,7 @@ class DataCleaning:
         """
         df.loc[
             df['store_type'] == 'Web Portal',
-            ['address', 'longitude', 'latitude', 'lat', 'locality']
-        ] = np.nan
+            ['address', 'longitude', 'latitude', 'lat', 'locality']] = np.nan
 
         return df
 
@@ -133,13 +139,9 @@ class DataCleaning:
         df['month'] = df[column_name].str.slice(5, 7)
         month_valid_mask = ~df['month'].isin(self.months_with_leading_zero)
 
-        df.loc[
-            month_valid_mask,
-            column_name
-        ] = df.loc[
-            month_valid_mask,
-            column_name
-        ].apply(DataCleaning._standardize_dob)
+        df.loc[month_valid_mask,
+               column_name] = df.loc[month_valid_mask, column_name].apply(
+                   DataCleaning._standardize_dob)
         df = df.drop('month', axis=1)
 
         # Change formats which are YYYY/MM/DD to YYYY-MM-DD
@@ -148,7 +150,8 @@ class DataCleaning:
 
         return df
 
-    def _drop_rows_with_invalid_entries(self, df: pd.DataFrame, column: str, valid_entries: List) -> pd.DataFrame:
+    def _drop_rows_with_invalid_entries(self, df: pd.DataFrame, column: str,
+                                        valid_entries: List) -> pd.DataFrame:
         """
         Drop rows where entries in column are not valid (Pattern identified so far across the data,
         be very sure this is the case before using this!)
@@ -156,10 +159,7 @@ class DataCleaning:
         logger.debug(f"Clean data in column {column}")
         invalid_entries_mask = ~df[column].isin(valid_entries).copy()
 
-        df.loc[
-            invalid_entries_mask,
-            column
-        ] = np.nan
+        df.loc[invalid_entries_mask, column] = np.nan
 
         self._log_number_of_rows_to_drop(df=df, subset=[column])
         df.dropna(subset=[column], inplace=True)
@@ -172,7 +172,8 @@ class DataCleaning:
         """
         logger.debug("Clean data in columns card_number and expiry_date")
         df = self._set_card_number_and_expiry_date(df=df)
-        df['card_number'] = df['card_number'].apply(lambda x: str(x).replace('?', ''))
+        df['card_number'] = df['card_number'].apply(
+            lambda x: str(x).replace('?', ''))
         logger.debug("Remove ??'s from column 'card_number'")
 
         # Drop columns 'card_number expiry_date' and 'Unnamed'
@@ -182,24 +183,18 @@ class DataCleaning:
     @staticmethod
     def _set_card_number_and_expiry_date(df: pd.DataFrame) -> pd.DataFrame:
         """Copies values from column 'card_number expiry_date' to card_number and expiry_date"""
-        logger.debug("Set the card number and expiry dates for nan entries from 'card_number expiry_date'")
+        logger.debug(
+            "Set the card number and expiry dates for nan entries from 'card_number expiry_date'"
+        )
         card_no_expiry_date_mask = ~df['card_number expiry_date'].isna()
 
-        df.loc[
+        df.loc[card_no_expiry_date_mask, 'card_number'] = df.loc[
             card_no_expiry_date_mask,
-            'card_number'
-        ] = df.loc[
-            card_no_expiry_date_mask,
-            'card_number expiry_date'
-        ].apply(lambda x: x.split()[0])
+            'card_number expiry_date'].apply(lambda x: x.split()[0])
 
-        df.loc[
+        df.loc[card_no_expiry_date_mask, 'expiry_date'] = df.loc[
             card_no_expiry_date_mask,
-            'expiry_date'
-        ] = df.loc[
-            card_no_expiry_date_mask,
-            'card_number expiry_date'
-        ].apply(lambda x: x.split()[1])
+            'card_number expiry_date'].apply(lambda x: x.split()[1])
 
         return df
 
@@ -252,11 +247,13 @@ class DataCleaning:
         """
         logger.info("Clean data in column weight")
         df_invalid_chars = df[df['weight'].str.endswith(' .')].copy()
-        df_invalid_chars['weight'] = df_invalid_chars['weight'].str.replace(' .', '')
+        df_invalid_chars['weight'] = df_invalid_chars['weight'].str.replace(
+            ' .', '')
         df.update(df_invalid_chars)
 
         df_rest = df.copy()
-        df_rest['weight'] = df_rest['weight'].apply(self._determine_weight_function)
+        df_rest['weight'] = df_rest['weight'].apply(
+            self._determine_weight_function)
         df.update(df_rest)
 
         df['weight'] = df['weight'].astype('float')
@@ -265,7 +262,8 @@ class DataCleaning:
     @staticmethod
     def _add_date_column(df: pd.DataFrame) -> pd.DataFrame:
         """Add a date column by concatenating year, month, day and timestamp"""
-        df['date'] = df['year'] + '-' + df['month'] + '-' + df['day'] + ' ' + df['timestamp']
+        df['date'] = df['year'] + '-' + df['month'] + '-' + df[
+            'day'] + ' ' + df['timestamp']
         df['date'] = pd.to_datetime(df['date'])
         return df
 
@@ -298,8 +296,7 @@ class DataCleaning:
         df = self._drop_rows_with_invalid_entries(
             df=df,
             column=self.valid_entries.column_name,
-            valid_entries=self.valid_entries.entries
-        )
+            valid_entries=self.valid_entries.entries)
         df = self._clean_date(df, 'date_payment_confirmed')
         df = self._clean_card_number_expiry_date(df)
         df.reset_index(inplace=True, drop=True)
@@ -332,8 +329,7 @@ class DataCleaning:
         df = self._drop_rows_with_invalid_entries(
             df=df,
             column=self.valid_entries.column_name,
-            valid_entries=self.valid_entries.entries
-        )
+            valid_entries=self.valid_entries.entries)
         df = self._clean_date(df, 'date_added')
         df = self.convert_product_weights(df)
         return df
@@ -344,7 +340,8 @@ class DataCleaning:
         resolves errors with dates and incorrectly typed values.
         """
         logger.info("Clean orders data")
-        df = self._drop_columns(df, columns=['first_name', 'last_name', '1', 'level_0'])
+        df = self._drop_columns(
+            df, columns=['first_name', 'last_name', '1', 'level_0'])
         df = self._set_index_column_as_index(df)
         return df
 
@@ -357,7 +354,6 @@ class DataCleaning:
         df = self._drop_rows_with_invalid_entries(
             df=df,
             column=self.valid_entries.column_name,
-            valid_entries=self.valid_entries.entries
-        )
+            valid_entries=self.valid_entries.entries)
         df = self._add_date_column(df)
         return df
