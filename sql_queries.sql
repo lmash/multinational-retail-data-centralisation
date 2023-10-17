@@ -132,3 +132,50 @@ ORDER BY
     total_sales;
 
 -- Task 9. How quickly is the company making sales?
+-- Note this solution uses the date column added to dim_date_times during panda cleaning for easier date manipulation on this table
+-- There is a second solution underneath which doesn't use the date column
+
+-- Set to verbose to ensure the interval is displayed using hours and mins text etc..
+SET intervalstyle = 'postgres_verbose';
+
+WITH interval_table AS (
+	SELECT dt.date,	
+		   LEAD(dt.date, 1) OVER (
+			   PARTITION BY dt.year
+			   ORDER BY dt.date
+		   ) - dt.date AS time_between_sales, 
+	       dt.year
+	FROM 
+		orders_table ord
+	INNER JOIN
+		dim_date_times dt ON ord.date_uuid = dt.date_uuid	
+)SELECT "year",
+        AVG(time_between_sales) AS actual_time_taken
+FROM 
+    interval_table
+GROUP BY
+    "year"
+ORDER BY
+    actual_time_taken DESC
+
+
+WITH interval_table AS (
+	SELECT CAST(dt.year || '-' || dt.month || '-' || dt.day || ' ' || dt.timestamp AS timestamp),	
+		   LEAD(CAST(dt.year || '-' || dt.month || '-' || dt.day || ' ' || dt.timestamp AS timestamp), 1) OVER (
+			   PARTITION BY dt.year
+			   ORDER BY CAST(dt.year || '-' || dt.month || '-' || dt.day || ' ' || dt.timestamp AS timestamp)
+		   ) - CAST(dt.year || '-' || dt.month || '-' || dt.day || ' ' || dt.timestamp AS timestamp) AS time_between_sales, 
+	       dt.year
+	FROM 
+		orders_table ord
+	INNER JOIN
+		dim_date_times dt ON ord.date_uuid = dt.date_uuid	
+)SELECT "year",
+        AVG(time_between_sales) AS actual_time_taken
+FROM 
+    interval_table
+GROUP BY
+    "year"
+ORDER BY
+    actual_time_taken DESC
+	
