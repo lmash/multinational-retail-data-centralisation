@@ -17,8 +17,8 @@ class DataCleaning:
 
     def __init__(self, column_entries: ColumnEntries = None):
         """
-        valid_or_drop is a Dictionary of column : [valid_values] entries in a column not in the list of
-        valid_values will result in the row being dropped
+        valid_entries is of type ColumnEntries, which has a column_name, and a list of 'valid' entries.
+        During cleaning the dataframe column with non matching entries will be dropped.
         """
         self.valid_entries = column_entries
 
@@ -57,7 +57,7 @@ class DataCleaning:
 
     @staticmethod
     def _clean_staff_numbers(df: pd.DataFrame) -> pd.DataFrame:
-        """Fix staff numbers with non numbers """
+        """Fix staff numbers with non-numeric characters """
         logger.debug("Clean data in column staff_numbers")
         df['staff_numbers'] = df['staff_numbers'].apply(
             lambda x: re.sub("[^0-9]", "", x))
@@ -66,9 +66,7 @@ class DataCleaning:
 
     @staticmethod
     def _update_store_web_details(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        The web store doesn't have a physical address. Update all address related fields to nan
-        """
+        """The web store doesn't have a physical address. Update all address related fields to nan"""
         df.loc[
             df['store_type'] == 'Web Portal',
             ['address', 'longitude', 'latitude', 'lat', 'locality']] = np.nan
@@ -335,10 +333,7 @@ class DataCleaning:
         return df
 
     def clean_order_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        This function cleans the orders data. It removes rows with null and bad data,
-        resolves errors with dates and incorrectly typed values.
-        """
+        """This function cleans the orders data. It drops columns not required and sets the index."""
         logger.info("Clean orders data")
         df = self._drop_columns(
             df, columns=['first_name', 'last_name', '1', 'level_0'])
@@ -346,10 +341,7 @@ class DataCleaning:
         return df
 
     def clean_date_times_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        This function cleans the date_times data. It removes rows with null and bad data,
-        resolves errors with dates and incorrectly typed values.
-        """
+        """This function cleans the date_times data. It drops rows with invalid entries and adds a date column."""
         logger.info("Clean date_times data")
         df = self._drop_rows_with_invalid_entries(
             df=df,

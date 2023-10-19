@@ -64,7 +64,7 @@ conda env create -f environment.yml
 
 4. .env_bkp populated with value for x-api-key. Renamed .env
 5. db_creds.bkp file RDS_ params populated with values for connecting to source database. Renamed db_creds.bkp
-6. db_creds_target.bkp file RDS_ params populated with values for connecting to source database. Renamed db_creds_target.bkp
+6. db_creds_target.bkp file RDS_ params populated with values for connecting to target database. Renamed db_creds_target.bkp
 
 ## Usage
 
