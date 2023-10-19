@@ -1,6 +1,6 @@
-DROP TABLE dim_card_details CASCADE;
-DROP TABLE dim_date_times CASCADE;
-DROP TABLE dim_products CASCADE;
-DROP TABLE dim_store_details CASCADE;
-DROP TABLE dim_users CASCADE;
-DROP TABLE orders_table;
+DROP TABLE IF EXISTS dim_card_details CASCADE;
+DROP TABLE IF EXISTS dim_date_times CASCADE;
+DROP TABLE IF EXISTS dim_products CASCADE;
+DROP TABLE IF EXISTS dim_store_details CASCADE;
+DROP TABLE IF EXISTS dim_users CASCADE;
+DROP TABLE IF EXISTS orders_table;

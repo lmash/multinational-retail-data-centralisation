@@ -42,7 +42,8 @@ learning together and therefore builds ones confidence by being able to deliver 
 
 ## Installation
 Pre-requisite: 
-* Conda/miniconda installed, 
+* Conda/miniconda installed
+* Postgres database sales_data created 
 
 1. Clone the repo
 
@@ -72,8 +73,7 @@ Run the below from the command line to extract, clean and load the data, and the
 schema. Queries can be found in sql_queries.sql
 
 ```sh
-python __main__.py
-./run_sql.sh
+./extract_clean_load_data.sh
 ```
 ### File structure
 ```
