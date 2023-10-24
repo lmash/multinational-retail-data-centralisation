@@ -8,6 +8,7 @@ Help the company utilize their data better.
 * [Project aim](#project-aim)
 * [What I've learned](#what-ive-learned)
 * [Tech Stack](#tech-stack)
+* [Query Results](#query-results-after-extract-clean-load)
 * [Installation](#installation)
 * [Usage](#usage)
 * [File structure](#file-structure)
@@ -39,6 +40,13 @@ learning together and therefore builds ones confidence by being able to deliver 
 ![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white)
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+
+## Query Results after Extract Clean Load 
+![task_4.jpg](screenshots%2Ftask_4.jpg)
+![task_5.jpg](screenshots%2Ftask_5.jpg)
+![task_6.jpg](screenshots%2Ftask_6.jpg)
+![task_8.jpg](screenshots%2Ftask_8.jpg)
+![task_9.jpg](screenshots%2Ftask_9.jpg)
 
 ## Installation
 Pre-requisite: 
@@ -104,7 +112,6 @@ schema. Queries can be found in sql_queries.sql
 │   └── 9_create_foreign_keys_on_orders_table.sql
 └── test_data_cleaning.py
 ```
-
 ## Run tests
 
 ```sh

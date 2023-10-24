@@ -11,10 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 class DataExtractor:
+    """
+    This class is used to assist with data extraction.
+    """
 
     @staticmethod
     def read_rds_table(connection, table_name: str) -> pd.DataFrame:
-        """This function accepts an sql connection and table name and returns the table as a dataframe"""
+        """This function accepts a sql connection and table name and returns the table as a dataframe"""
         logger.info(
             f"Read table {table_name} from host {connection.engine.url.host}")
         return pd.read_sql_table(table_name=table_name, con=connection)
@@ -38,12 +41,22 @@ class DataExtractor:
 
     @staticmethod
     def list_number_of_stores(url: str, headers: Dict) -> int:
+        """
+        This function accepts a string url and returns the total number of
+        stores
+        """
         response = requests.get(url, headers=headers)
         return response.json()['number_stores']
 
     @staticmethod
     def retrieve_stores_data(url: str, headers: Dict,
                              number_stores: int) -> pd.DataFrame:
+        """
+        This function accepts a partial string url and the total number of
+        stores. It iterates through each store, building the url and
+        then requesting the store details. It returns a dataframe
+        with all stores.
+        """
         stores = []
 
         for number in range(number_stores):
